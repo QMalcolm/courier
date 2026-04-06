@@ -1,0 +1,85 @@
+<.header>
+  Schedule
+  <:actions>
+    <.link patch={~p"/schedule/new"}>
+      <.button>New Schedule</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="schedules" rows={@schedules}>
+  <:col :let={s} label="Time"><span class="font-mono">{format_time(s)}</span></:col>
+  <:col :let={s} label="Days">{format_days(s)}</:col>
+  <:col :let={s} label="Label"><span class="text-zinc-500">{s.label}</span></:col>
+  <:col :let={s} label="Enabled">
+    <button
+      phx-click="toggle"
+      phx-value-id={s.id}
+      class={[
+        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+        if(s.enabled, do: "bg-zinc-900", else: "bg-zinc-200")
+      ]}
+      role="switch"
+      aria-checked={to_string(s.enabled)}
+    >
+      <span class={[
+        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+        if(s.enabled, do: "translate-x-5", else: "translate-x-0")
+      ]} />
+    </button>
+  </:col>
+  <:action :let={s}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: s.id})}
+      data-confirm="Delete this schedule?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action == :new}
+  id="schedule-modal"
+  show
+  on_cancel={JS.patch(~p"/schedule")}
+>
+  <.header>New Schedule</.header>
+
+  <.simple_form
+    for={@form}
+    id="schedule-form"
+    phx-change="validate"
+    phx-submit="save"
+  >
+    <.input field={@form[:label]} type="text" label="Label (optional)" placeholder="e.g. Weekday morning" />
+
+    <div class="grid grid-cols-2 gap-4">
+      <.input field={@form[:hour]} type="number" label="Hour (0–23)" min="0" max="23" />
+      <.input field={@form[:minute]} type="number" label="Minute (0–59)" min="0" max="59" />
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold leading-6 text-zinc-800 mb-2">Days</label>
+      <div class="flex flex-wrap gap-3">
+        <%= for {label, value} <- @days do %>
+          <label class="flex items-center gap-1.5 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              name="schedule[days][]"
+              value={value}
+              checked={day_checked?(@form, value)}
+              class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            />
+            {label}
+          </label>
+        <% end %>
+      </div>
+      <.error :for={msg <- Enum.map(@form[:days].errors, &translate_error(&1))}>{msg}</.error>
+    </div>
+
+    <:actions>
+      <.button phx-disable-with="Saving...">Add Schedule</.button>
+    </:actions>
+  </.simple_form>
+</.modal>

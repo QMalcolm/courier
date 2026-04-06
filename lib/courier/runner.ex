@@ -22,6 +22,15 @@ defmodule Courier.Runner do
   alias Courier.Runs
   alias Courier.Subscriptions.Subscription
 
+  @doc """
+  Runs deliveries for all currently enabled subscriptions.
+  Called by Quantum on schedule.
+  """
+  def run_all_enabled do
+    Courier.Subscriptions.list_enabled_subscriptions()
+    |> Enum.each(&run/1)
+  end
+
   @doc "Starts an async delivery for the given subscription."
   def run(%Subscription{recipe: recipe, device: device} = _subscription) do
     Task.Supervisor.start_child(Courier.TaskSupervisor, fn ->

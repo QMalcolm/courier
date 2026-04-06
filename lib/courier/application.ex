@@ -22,7 +22,9 @@ defmodule Courier.Application do
       # Quantum scheduler for delivering recipes on schedule
       Courier.Scheduler,
       # Start to serve requests, typically the last entry
-      CourierWeb.Endpoint
+      CourierWeb.Endpoint,
+      # Restore persisted schedules into Quantum after everything else is up
+      {Task, fn -> Courier.Schedules.sync_quantum() end}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
