@@ -53,7 +53,7 @@ RUN apt-get update -y && \
       libgl1 libglib2.0-0 libfontconfig1 libdbus-1-3 \
       libxcb1 libxkbcommon0 libegl1 libopengl0 libxrender1 \
       # Calibre installer
-      wget xz-utils \
+      wget xz-utils python3 python-is-python3 \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set locale
