@@ -1,10 +1,12 @@
 # Build image versions
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=28.0.1
-ARG DEBIAN_VERSION=bullseye-20260316-slim
+ARG BUILDER_DEBIAN_VERSION=bullseye-20260316-slim
+# Calibre binaries require glibc >= 2.35; bookworm ships 2.36
+ARG RUNNER_DEBIAN_VERSION=bookworm-slim
 
-ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${BUILDER_DEBIAN_VERSION}"
+ARG RUNNER_IMAGE="debian:${RUNNER_DEBIAN_VERSION}"
 
 # ---- Build stage ----
 FROM ${BUILDER_IMAGE} AS builder
@@ -52,8 +54,8 @@ RUN apt-get update -y && \
       # Calibre runtime dependencies
       libgl1 libglib2.0-0 libfontconfig1 libdbus-1-3 \
       libxcb1 libxkbcommon0 libegl1 libopengl0 libxrender1 \
-      # Calibre installer
-      wget xz-utils python3 python-is-python3 \
+      # Calibre installer (needs python3 to detect glibc version)
+      wget xz-utils python3 \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set locale
