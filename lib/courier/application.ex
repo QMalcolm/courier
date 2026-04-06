@@ -17,6 +17,8 @@ defmodule Courier.Application do
       {Phoenix.PubSub, name: Courier.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Courier.Finch},
+      # Supervised task pool for async recipe deliveries
+      {Task.Supervisor, name: Courier.TaskSupervisor},
       # Quantum scheduler for delivering recipes on schedule
       Courier.Scheduler,
       # Start to serve requests, typically the last entry
