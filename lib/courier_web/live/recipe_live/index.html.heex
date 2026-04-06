@@ -1,0 +1,46 @@
+<.header>
+  Recipes
+  <:actions>
+    <.link patch={~p"/recipes/new"}>
+      <.button>New Recipe</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="recipes"
+  rows={@recipes}
+  row_click={fn recipe -> JS.patch(~p"/recipes/#{recipe}/edit") end}
+>
+  <:col :let={recipe} label="Name">{recipe.name}</:col>
+  <:col :let={recipe} label="Slug"><code class="text-xs text-zinc-500">{recipe.slug}</code></:col>
+  <:col :let={recipe} label="Oldest article">{recipe.oldest_article}d</:col>
+  <:col :let={recipe} label="Max articles">{recipe.max_articles}</:col>
+  <:action :let={recipe}>
+    <.link patch={~p"/recipes/#{recipe}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={recipe}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: recipe.id}) |> hide("#recipe-#{recipe.id}")}
+      data-confirm="Delete this recipe and all its subscriptions and runs?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="recipe-modal"
+  show
+  on_cancel={JS.patch(~p"/recipes")}
+>
+  <.live_component
+    module={CourierWeb.RecipeLive.FormComponent}
+    id={@recipe.id || :new}
+    title={@page_title}
+    action={@live_action}
+    recipe={@recipe}
+    patch={~p"/recipes"}
+  />
+</.modal>

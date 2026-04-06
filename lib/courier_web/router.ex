@@ -18,6 +18,19 @@ defmodule CourierWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/recipes", RecipeLive.Index, :index
+    live "/recipes/new", RecipeLive.Index, :new
+    live "/recipes/:id/edit", RecipeLive.Index, :edit
+
+    live "/devices", DeviceLive.Index, :index
+    live "/devices/new", DeviceLive.Index, :new
+    live "/devices/:id/edit", DeviceLive.Index, :edit
+
+    live "/subscriptions", SubscriptionLive.Index, :index
+    live "/subscriptions/new", SubscriptionLive.Index, :new
+
+    live "/logs", RunLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

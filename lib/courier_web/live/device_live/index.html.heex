@@ -1,0 +1,44 @@
+<.header>
+  Devices
+  <:actions>
+    <.link patch={~p"/devices/new"}>
+      <.button>New Device</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="devices"
+  rows={@devices}
+  row_click={fn device -> JS.patch(~p"/devices/#{device}/edit") end}
+>
+  <:col :let={device} label="Name">{device.name}</:col>
+  <:col :let={device} label="Email">{device.email}</:col>
+  <:action :let={device}>
+    <.link patch={~p"/devices/#{device}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={device}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: device.id}) |> hide("#device-#{device.id}")}
+      data-confirm="Delete this device and all its subscriptions?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="device-modal"
+  show
+  on_cancel={JS.patch(~p"/devices")}
+>
+  <.live_component
+    module={CourierWeb.DeviceLive.FormComponent}
+    id={@device.id || :new}
+    title={@page_title}
+    action={@live_action}
+    device={@device}
+    patch={~p"/devices"}
+  />
+</.modal>

@@ -1,0 +1,73 @@
+<.header>
+  Subscriptions
+  <:actions>
+    <.link patch={~p"/subscriptions/new"}>
+      <.button>New Subscription</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="subscriptions" rows={@subscriptions}>
+  <:col :let={sub} label="Recipe">{sub.recipe.name}</:col>
+  <:col :let={sub} label="Device">{sub.device.name}</:col>
+  <:col :let={sub} label="Email"><span class="text-zinc-500 text-sm">{sub.device.email}</span></:col>
+  <:col :let={sub} label="Enabled">
+    <button
+      phx-click="toggle"
+      phx-value-id={sub.id}
+      class={[
+        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+        if(sub.enabled, do: "bg-zinc-900", else: "bg-zinc-200")
+      ]}
+      role="switch"
+      aria-checked={to_string(sub.enabled)}
+    >
+      <span class={[
+        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+        if(sub.enabled, do: "translate-x-5", else: "translate-x-0")
+      ]} />
+    </button>
+  </:col>
+  <:action :let={sub}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: sub.id})}
+      data-confirm="Remove this subscription?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action == :new}
+  id="subscription-modal"
+  show
+  on_cancel={JS.patch(~p"/subscriptions")}
+>
+  <.header>New Subscription</.header>
+
+  <.simple_form
+    for={@form}
+    id="subscription-form"
+    phx-change="validate"
+    phx-submit="save"
+  >
+    <.input
+      field={@form[:recipe_id]}
+      type="select"
+      label="Recipe"
+      options={Enum.map(@recipes, &{&1.name, &1.id})}
+      prompt="Select a recipe"
+    />
+    <.input
+      field={@form[:device_id]}
+      type="select"
+      label="Device"
+      options={Enum.map(@devices, &{"#{&1.name} (#{&1.email})", &1.id})}
+      prompt="Select a device"
+    />
+    <:actions>
+      <.button phx-disable-with="Saving...">Add Subscription</.button>
+    </:actions>
+  </.simple_form>
+</.modal>

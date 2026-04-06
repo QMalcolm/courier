@@ -1,0 +1,26 @@
+<.header>Logs</.header>
+
+<.table id="runs" rows={@runs}>
+  <:col :let={run} label="Recipe">{run.recipe.name}</:col>
+  <:col :let={run} label="Device">{run.device.name}</:col>
+  <:col :let={run} label="Status">
+    <span class={[
+      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+      status_class(run.status)
+    ]}>
+      {run.status}
+    </span>
+  </:col>
+  <:col :let={run} label="Started">
+    <span class="text-zinc-500 text-sm">
+      {if run.started_at, do: Calendar.strftime(run.started_at, "%b %d %H:%M"), else: "—"}
+    </span>
+  </:col>
+  <:col :let={run} label="Duration">{duration(run)}</:col>
+  <:col :let={run} label="Log">
+    <details :if={run.log_output}>
+      <summary class="cursor-pointer text-sm text-zinc-500 hover:text-zinc-900">View</summary>
+      <pre class="mt-2 text-xs bg-zinc-50 border border-zinc-200 rounded p-3 overflow-x-auto max-w-xl whitespace-pre-wrap">{run.log_output}</pre>
+    </details>
+  </:col>
+</.table>
