@@ -29,13 +29,7 @@ mix phx.gen.secret
 
 Save the output — you'll need it in the next step.
 
-### 3. Make the package public
-
-The Docker image is published to GitHub Container Registry on every push to `main`. Before TrueNAS can pull it without credentials, make the package public:
-
-**github.com → your profile → Packages → courier → Package settings → Change visibility → Public**
-
-### 4. Add the app via custom YAML
+### 3. Add the app via custom YAML
 
 In TrueNAS go to **Apps → Discover Apps → Custom App**, switch to the **YAML** tab, and paste the following — filling in your values:
 
@@ -75,7 +69,7 @@ services:
 
 Click **Save**. The container will pull and start. Courier will be available at `http://<truenas-ip>:4000`.
 
-### 5. Upgrading
+### 4. Upgrading
 
 When a new image is published, go to **Apps → courier → Update** to pull the latest version. Your database is safe on the dataset volume.
 
