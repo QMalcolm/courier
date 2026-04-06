@@ -92,8 +92,8 @@ When a new image is published, go to **Apps → courier → Update** to pull the
 | `PHX_SCHEME` | No | `http` | Set to `https` if behind a TLS-terminating reverse proxy |
 | `COURIER_CALIBRE_PATH` | No | `/opt/calibre` | Path to Calibre binaries inside the container |
 | `COURIER_CALIBRE_LIBRARY` | No | — | Path to a Calibre library for archiving epubs (optional) |
-| `COURIER_SMTP_FROM` | No | — | Sender email address |
-| `COURIER_SMTP_USERNAME` | No | — | SMTP username |
+| `COURIER_SMTP_FROM` | No | — | Sender address shown in the `From:` header of delivered emails |
+| `COURIER_SMTP_USERNAME` | No | — | SMTP authentication username — for Gmail, this is the same as `COURIER_SMTP_FROM` |
 | `COURIER_SMTP_PASSWORD` | No | — | SMTP password |
 | `COURIER_SMTP_RELAY` | No | `smtp.gmail.com` | SMTP relay host |
 | `COURIER_SMTP_PORT` | No | `587` | SMTP port |
