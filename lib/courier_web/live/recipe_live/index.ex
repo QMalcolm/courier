@@ -14,7 +14,9 @@ defmodule CourierWeb.RecipeLive.Index do
       language             = 'en'
       oldest_article       = 7
       max_articles_per_feed = 25
-      auto_cleanup         = True
+      auto_cleanup          = True
+      no_stylesheets        = True
+      use_embedded_content  = False
 
       feeds = [
           ('Feed Name', 'https://example.com/rss'),
