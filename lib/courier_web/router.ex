@@ -18,7 +18,6 @@ defmodule CourierWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-
     live "/recipes", RecipeLive.Index, :index
     live "/recipes/new", RecipeLive.Index, :new
     live "/recipes/:id/edit", RecipeLive.Index, :edit
