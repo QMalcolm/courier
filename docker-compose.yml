@@ -6,6 +6,9 @@ services:
     volumes:
       # Persist the SQLite database
       - courier_data:/data
+      # Optional: mount your Calibre library to archive delivered epubs.
+      # Set this to the same path your Calibre or CalibreWeb container uses.
+      # - /path/to/calibre/library:/library
     environment:
       # Required
       DATABASE_PATH: /data/courier.db
@@ -24,8 +27,9 @@ services:
       COURIER_SMTP_PORT: "587"
       COURIER_SMTP_ENCRYPTION: TLS
 
-      # Optional: archive delivered epubs to a Calibre library
-      # Mount a volume and set this path to enable:
+      # Optional: archive delivered epubs into a Calibre library.
+      # Uncomment the volume mount above and set this to the mount path.
+      # Works with Calibre and CalibreWeb — point both at the same library directory.
       # COURIER_CALIBRE_LIBRARY: /library
 
 volumes:

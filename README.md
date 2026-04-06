@@ -81,6 +81,33 @@ When a new image is published, go to **Apps → courier → Update** to pull the
 
 ---
 
+## Calibre / CalibreWeb library integration
+
+Courier can archive every delivered epub into a Calibre library, making it available in Calibre or CalibreWeb automatically. After each successful conversion, it runs `calibredb add` to insert the epub into the library.
+
+To enable it, mount your Calibre library directory into the Courier container and set `COURIER_CALIBRE_LIBRARY`.
+
+**TrueNAS SCALE YAML — add a second volume and uncomment the env var:**
+
+```yaml
+services:
+  courier:
+    image: ghcr.io/qmalcolm/courier:latest
+    volumes:
+      - /mnt/tank/courier:/data
+      - /mnt/tank/calibre/library:/library   # same dataset CalibreWeb uses
+    environment:
+      DATABASE_PATH: /data/courier.db
+      COURIER_CALIBRE_LIBRARY: /library      # enables calibredb add after each delivery
+      # ... rest of your config
+```
+
+The path `/mnt/tank/calibre/library` should match whatever dataset your CalibreWeb container mounts as its library — check your CalibreWeb app configuration to find it.
+
+**How it works:** Courier shells out to its bundled `/opt/calibre/calibredb`, which writes the epub and metadata directly into `metadata.db` on the shared library directory. CalibreWeb reads from that same file, so new articles appear on the next page load with no manual scan required.
+
+---
+
 ## Environment variable reference
 
 | Variable | Required | Default | Description |
