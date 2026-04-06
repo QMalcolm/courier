@@ -4,6 +4,23 @@ defmodule CourierWeb.RecipeLive.Index do
   alias Courier.Library
   alias Courier.Library.Recipe
 
+  @recipe_template """
+  from calibre.web.feeds.news import BasicNewsRecipe
+
+
+  class MyRecipe(BasicNewsRecipe):
+      title                = 'My Recipe'
+      description          = ''
+      language             = 'en'
+      oldest_article       = 7
+      max_articles_per_feed = 25
+      auto_cleanup         = True
+
+      feeds = [
+          ('Feed Name', 'https://example.com/rss'),
+      ]
+  """
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, assign(socket, :recipes, Library.list_recipes())}
@@ -23,7 +40,7 @@ defmodule CourierWeb.RecipeLive.Index do
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Recipe")
-    |> assign(:recipe, %Recipe{oldest_article: 7, max_articles: 25})
+    |> assign(:recipe, %Recipe{oldest_article: 7, max_articles: 25, source: @recipe_template})
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
