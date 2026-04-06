@@ -1,0 +1,32 @@
+services:
+  courier:
+    build: .
+    ports:
+      - "4000:4000"
+    volumes:
+      # Persist the SQLite database
+      - courier_data:/data
+    environment:
+      # Required
+      DATABASE_PATH: /data/courier.db
+      SECRET_KEY_BASE: "changeme_run_mix_phx_gen_secret"
+
+      # Phoenix host/port (adjust if behind a reverse proxy)
+      PHX_HOST: localhost
+      PORT: "4000"
+      # PHX_SCHEME: https
+
+      # Calibre delivery settings
+      COURIER_SMTP_FROM: you@gmail.com
+      COURIER_SMTP_USERNAME: you@gmail.com
+      COURIER_SMTP_PASSWORD: your_app_password
+      COURIER_SMTP_RELAY: smtp.gmail.com
+      COURIER_SMTP_PORT: "587"
+      COURIER_SMTP_ENCRYPTION: TLS
+
+      # Optional: archive delivered epubs to a Calibre library
+      # Mount a volume and set this path to enable:
+      # COURIER_CALIBRE_LIBRARY: /library
+
+volumes:
+  courier_data:

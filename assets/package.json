@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "dependencies": {
+    "@codemirror/lang-python": "^6.2.1",
+    "codemirror": "^6.0.2"
+  }
+}
