@@ -104,17 +104,8 @@ defmodule Courier.Runner do
     end
   end
 
-  defp run_convert(recipe_file, epub_file, recipe) do
-    args = [
-      recipe_file,
-      epub_file,
-      "--oldest-article",
-      to_string(recipe.oldest_article),
-      "--max-articles-per-feed",
-      to_string(recipe.max_articles)
-    ]
-
-    cmd(calibre_bin("ebook-convert"), args, "ebook-convert")
+  defp run_convert(recipe_file, epub_file, _recipe) do
+    cmd(calibre_bin("ebook-convert"), [recipe_file, epub_file], "ebook-convert")
   end
 
   defp maybe_archive(epub_file) do
