@@ -1,8 +1,7 @@
 # Build image versions
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=28.0.1
-ARG BUILDER_DEBIAN_VERSION=bullseye-20260316-slim
-# Calibre binaries require glibc >= 2.35; bookworm ships 2.36
+ARG BUILDER_DEBIAN_VERSION=bookworm-20260316-slim
 ARG RUNNER_DEBIAN_VERSION=bookworm-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${BUILDER_DEBIAN_VERSION}"
