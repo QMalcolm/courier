@@ -28,6 +28,7 @@ defmodule CourierWeb.RecipeLive.FormComponent do
         </div>
         <div>
           <label class="block text-sm font-semibold leading-6 text-zinc-800 mb-1">Source</label>
+          <div id="recipe-source-editor" phx-update="ignore"></div>
           <textarea
             id="recipe-source"
             name={@form[:source].name}

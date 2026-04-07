@@ -4,11 +4,8 @@ import {yaml} from "@codemirror/lang-yaml"
 const CodeEditor = {
   mounted() {
     const textarea = this.el
-
-    const wrapper = document.createElement("div")
+    const wrapper = document.getElementById("recipe-source-editor")
     wrapper.className = "cm-editor-wrapper border border-zinc-300 rounded-lg overflow-hidden"
-    textarea.insertAdjacentElement("beforebegin", wrapper)
-    textarea.classList.add("hidden")
 
     this.view = new EditorView({
       doc: textarea.value,
