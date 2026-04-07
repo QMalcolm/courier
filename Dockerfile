@@ -67,7 +67,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # Install Calibre to /opt/calibre (matches COURIER_CALIBRE_PATH default)
 RUN wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | \
-    sh /dev/stdin install_dir=/opt/calibre
+    sh /dev/stdin install_dir=/opt
 
 # Run Calibre CLI tools headlessly — no X11 display required
 ENV QT_QPA_PLATFORM=offscreen
