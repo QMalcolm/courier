@@ -12,7 +12,8 @@ services:
     environment:
       # Required
       DATABASE_PATH: /data/courier.db
-      SECRET_KEY_BASE: "changeme_run_mix_phx_gen_secret"
+      # Optional: set for sessions that survive restarts (generate with: mix phx.gen.secret)
+      # SECRET_KEY_BASE: ""
 
       # Phoenix host/port (adjust if behind a reverse proxy)
       PHX_HOST: localhost

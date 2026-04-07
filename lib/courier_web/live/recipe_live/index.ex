@@ -5,22 +5,15 @@ defmodule CourierWeb.RecipeLive.Index do
   alias Courier.Library.Recipe
 
   @recipe_template """
-  from calibre.web.feeds.news import BasicNewsRecipe
+  feeds:
+    - name: Feed Name
+      url: https://example.com/rss
 
-
-  class MyRecipe(BasicNewsRecipe):
-      title                = 'My Recipe'
-      description          = ''
-      language             = 'en'
-      oldest_article       = 7
-      max_articles_per_feed = 25
-      auto_cleanup          = True
-      no_stylesheets        = True
-      use_embedded_content  = False
-
-      feeds = [
-          ('Feed Name', 'https://example.com/rss'),
-      ]
+  # description: ""         # shown in the epub metadata
+  # language: en            # ISO 639-1 language code
+  # auto_cleanup: true      # strip boilerplate/navigation from articles
+  # no_stylesheets: true    # remove CSS for a cleaner reading experience
+  # use_embedded_content: false  # set true if the feed includes full article text
   """
 
   @impl true

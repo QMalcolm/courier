@@ -19,17 +19,7 @@ Ships as a single Docker image with Calibre bundled.
 
 In the TrueNAS web UI go to **Datasets → Add Dataset** and create a dataset for Courier's SQLite database. Note the full path — e.g. `/mnt/tank/courier`.
 
-### 2. Generate a secret key base
-
-On any machine with Elixir installed:
-
-```bash
-mix phx.gen.secret
-```
-
-Save the output — you'll need it in the next step.
-
-### 3. Add the app via custom YAML
+### 2. Add the app via custom YAML
 
 In TrueNAS go to **Apps → Discover Apps → Custom App**, switch to the **YAML** tab, and paste the following — filling in your values:
 
@@ -46,8 +36,8 @@ services:
       # Database (persisted to your dataset)
       DATABASE_PATH: /data/courier.db
 
-      # Generate with: mix phx.gen.secret
-      SECRET_KEY_BASE: "paste_your_generated_secret_here"
+      # Optional: set for sessions that survive restarts (generate with: mix phx.gen.secret)
+      # SECRET_KEY_BASE: ""
 
       # Set to your TrueNAS hostname or IP
       PHX_HOST: truenas.local
@@ -107,7 +97,7 @@ The path `/mnt/tank/calibre/library` should match whatever dataset your CalibreW
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `DATABASE_PATH` | Yes | — | Absolute path to the SQLite database file |
-| `SECRET_KEY_BASE` | Yes | — | Phoenix secret key (generate with `mix phx.gen.secret`) |
+| `SECRET_KEY_BASE` | No | — | Phoenix secret key — if set, sessions survive restarts; if unset, a random key is generated on each startup (generate with `mix phx.gen.secret`) |
 | `PHX_HOST` | No | `localhost` | Hostname used in generated URLs |
 | `PORT` | No | `4000` | Port the HTTP server listens on |
 | `PHX_SCHEME` | No | `http` | Set to `https` if behind a TLS-terminating reverse proxy |

@@ -1,5 +1,5 @@
 import {EditorView, basicSetup} from "codemirror"
-import {python} from "@codemirror/lang-python"
+import {yaml} from "@codemirror/lang-yaml"
 
 const CodeEditor = {
   mounted() {
@@ -14,7 +14,7 @@ const CodeEditor = {
       doc: textarea.value,
       extensions: [
         basicSetup,
-        python(),
+        yaml(),
         EditorView.theme({
           "&": {fontSize: "13px", height: "480px"},
           ".cm-scroller": {overflow: "auto", fontFamily: "ui-monospace, monospace"},

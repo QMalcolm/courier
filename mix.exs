@@ -58,7 +58,8 @@ defmodule Courier.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:quantum, "~> 3.0"}
+      {:quantum, "~> 3.0"},
+      {:yaml_elixir, "~> 2.9"}
     ]
   end
 

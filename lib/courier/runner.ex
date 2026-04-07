@@ -19,6 +19,7 @@ defmodule Courier.Runner do
 
   require Logger
 
+  alias Courier.Library.Recipe
   alias Courier.Runs
   alias Courier.Subscriptions.Subscription
 
@@ -71,7 +72,7 @@ defmodule Courier.Runner do
     File.mkdir_p!(work_dir)
     recipe_file = Path.join(work_dir, "recipe.recipe")
     epub_file = Path.join(work_dir, "output.epub")
-    File.write!(recipe_file, recipe.source)
+    File.write!(recipe_file, Recipe.to_python(recipe))
 
     {status, log} = run_steps(recipe_file, epub_file, recipe, device)
 
