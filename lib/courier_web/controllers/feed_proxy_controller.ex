@@ -2,6 +2,7 @@ defmodule CourierWeb.FeedProxyController do
   use CourierWeb, :controller
 
   alias Courier.DeliveredArticles
+  alias Courier.FeedParser
 
   def show(conn, %{"run_id" => run_id, "recipe_id" => recipe_id, "url" => url}) do
     known_guids = DeliveredArticles.list_guids_for_recipe(recipe_id)
@@ -81,28 +82,8 @@ defmodule CourierWeb.FeedProxyController do
     {filtered_body, served_guids}
   end
 
-  defp extract_rss_guid(item_block) do
-    regex_first(item_block, [
-      ~r/<guid[^>]*>(.*?)<\/guid>/s,
-      ~r/<link>(.*?)<\/link>/s
-    ])
-  end
-
-  defp extract_atom_id(entry_block) do
-    regex_first(entry_block, [
-      ~r/<id[^>]*>(.*?)<\/id>/s,
-      ~r/<link[^>]*href="([^"]+)"/
-    ])
-  end
-
-  defp regex_first(_text, []), do: nil
-
-  defp regex_first(text, [regex | rest]) do
-    case Regex.run(regex, text, capture: :all_but_first) do
-      [value] -> String.trim(value)
-      _ -> regex_first(text, rest)
-    end
-  end
+  defp extract_rss_guid(item_block), do: FeedParser.extract_rss_guid(item_block)
+  defp extract_atom_id(entry_block), do: FeedParser.extract_atom_id(entry_block)
 
   defp store_served_guids(_run_id, []), do: :ok
 

@@ -26,6 +26,7 @@ defmodule CourierWeb.RunLive.Index do
   def status_class("success"), do: "bg-green-100 text-green-800"
   def status_class("failure"), do: "bg-red-100 text-red-800"
   def status_class("running"), do: "bg-blue-100 text-blue-800"
+  def status_class("skipped"), do: "bg-amber-100 text-amber-700"
   def status_class(_), do: "bg-zinc-100 text-zinc-600"
 
   def duration(%{started_at: nil}), do: "—"

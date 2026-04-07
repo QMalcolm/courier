@@ -20,6 +20,7 @@ defmodule Courier.Runner do
   require Logger
 
   alias Courier.DeliveredArticles
+  alias Courier.FeedParser
   alias Courier.Library.Recipe
   alias Courier.Runs
   alias Courier.Subscriptions.Subscription
@@ -64,7 +65,12 @@ defmodule Courier.Runner do
 
     broadcast({:run_updated, run})
 
-    {status, log} = deliver(recipe, device, Integer.to_string(run.id))
+    {status, log} =
+      if has_new_articles?(recipe) do
+        deliver(recipe, device, Integer.to_string(run.id))
+      else
+        {"skipped", "=== pre-flight ===\nAll articles already delivered.\n"}
+      end
 
     {:ok, finished_run} =
       Runs.update_run(run, %{
@@ -75,6 +81,19 @@ defmodule Courier.Runner do
 
     Logger.info("[Runner] Finished: recipe=#{recipe.slug} status=#{status}")
     broadcast({:run_updated, finished_run})
+  end
+
+  defp has_new_articles?(recipe) do
+    {:ok, config} = YamlElixir.read_from_string(recipe.source)
+    feed_urls = config |> Map.get("feeds", []) |> Enum.map(& &1["url"])
+    known_guids = DeliveredArticles.list_guids_for_recipe(recipe.id)
+
+    Enum.any?(feed_urls, fn url ->
+      case FeedParser.fetch_guids(url) do
+        {:ok, guids} -> Enum.any?(guids, &(not MapSet.member?(known_guids, &1)))
+        {:error, _} -> true
+      end
+    end)
   end
 
   defp deliver(recipe, device, run_id) do
