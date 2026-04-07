@@ -2,7 +2,7 @@ defmodule Courier.Runs.Run do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @statuses ~w(pending running success failure)
+  @statuses ~w(pending running success failure skipped)
 
   schema "runs" do
     field :status, :string, default: "pending"

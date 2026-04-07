@@ -32,15 +32,26 @@ defmodule Courier.Library.Recipe do
   `title`, `oldest_article`, and `max_articles` come from the DB fields.
   Everything else (`feeds`, `description`, `language`, `auto_cleanup`,
   `no_stylesheets`, `use_embedded_content`) is read from the YAML source.
+
+  Feed URLs are rewritten through Courier's RSS proxy so that already-delivered
+  articles can be filtered out before Calibre fetches them. `run_id` identifies
+  this particular delivery in the proxy's ETS buffer, and `proxy_base_url` is
+  the internal base URL Calibre can reach (e.g. "http://localhost:4000").
   """
-  def to_python(%__MODULE__{} = recipe) do
+  def to_python(%__MODULE__{} = recipe, run_id, proxy_base_url) do
     {:ok, config} = YamlElixir.read_from_string(recipe.source)
 
     feeds_lines =
       config
       |> Map.get("feeds", [])
       |> Enum.map_join("\n", fn %{"name" => name, "url" => url} ->
-        "        ('#{esc(name)}', '#{esc(url)}'),"
+        proxied_url =
+          "#{proxy_base_url}/proxy/feed" <>
+            "?run_id=#{run_id}" <>
+            "&recipe_id=#{recipe.id}" <>
+            "&url=#{URI.encode_www_form(url)}"
+
+        "        ('#{esc(name)}', '#{esc(proxied_url)}'),"
       end)
 
     description = esc(Map.get(config, "description", ""))

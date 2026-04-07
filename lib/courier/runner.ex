@@ -19,6 +19,7 @@ defmodule Courier.Runner do
 
   require Logger
 
+  alias Courier.DeliveredArticles
   alias Courier.Library.Recipe
   alias Courier.Runs
   alias Courier.Subscriptions.Subscription
@@ -63,7 +64,7 @@ defmodule Courier.Runner do
 
     broadcast({:run_updated, run})
 
-    {status, log} = deliver(recipe, device)
+    {status, log} = deliver(recipe, device, Integer.to_string(run.id))
 
     {:ok, finished_run} =
       Runs.update_run(run, %{
@@ -76,34 +77,85 @@ defmodule Courier.Runner do
     broadcast({:run_updated, finished_run})
   end
 
-  defp deliver(recipe, device) do
+  defp deliver(recipe, device, run_id) do
     work_dir =
       Path.join(System.tmp_dir!(), "courier_#{recipe.slug}_#{System.unique_integer([:positive])}")
 
     File.mkdir_p!(work_dir)
     recipe_file = Path.join(work_dir, "recipe.recipe")
     epub_file = Path.join(work_dir, "output.epub")
-    File.write!(recipe_file, Recipe.to_python(recipe))
+    File.write!(recipe_file, Recipe.to_python(recipe, run_id, proxy_base_url()))
 
-    {status, log} = run_steps(recipe_file, epub_file, recipe, device)
+    {status, log} = run_steps(recipe_file, epub_file, recipe, device, run_id)
 
     File.rm_rf!(work_dir)
     {status, log}
   end
 
-  defp run_steps(recipe_file, epub_file, recipe, device) do
-    case run_convert(recipe_file, epub_file, recipe) do
-      {:ok, convert_log} ->
-        archive_log = maybe_archive(epub_file)
+  defp run_steps(recipe_file, epub_file, recipe, device, run_id) do
+    result =
+      case run_convert(recipe_file, epub_file, recipe) do
+        {:ok, convert_log} ->
+          if epub_has_articles?(epub_file) do
+            archive_log = maybe_archive(epub_file)
 
-        case run_smtp(epub_file, recipe, device) do
-          {:ok, smtp_log} -> {"success", convert_log <> archive_log <> smtp_log}
-          {:error, smtp_log} -> {"failure", convert_log <> archive_log <> smtp_log}
-        end
+            case run_smtp(epub_file, recipe, device) do
+              {:ok, smtp_log} ->
+                commit_delivered_articles(recipe.id, run_id)
+                {"success", convert_log <> archive_log <> smtp_log}
 
-      {:error, convert_log} ->
-        {"failure", convert_log}
+              {:error, smtp_log} ->
+                {"failure", convert_log <> archive_log <> smtp_log}
+            end
+          else
+            {"skipped", convert_log <> "=== skip ===\nNo new articles found.\n"}
+          end
+
+        {:error, convert_log} ->
+          {"failure", convert_log}
+      end
+
+    clear_delivery_buffer(run_id)
+    result
+  end
+
+  # Calibre news EPUBs place article HTML files at OEBPS/article_N_M.html.
+  # If none exist the EPUB contains only boilerplate (cover, TOC, stylesheet).
+  defp epub_has_articles?(epub_file) do
+    case :zip.list_dir(String.to_charlist(epub_file)) do
+      {:ok, entries} ->
+        Enum.any?(entries, fn
+          {:zip_file, name, _, _, _, _} ->
+            to_string(name) =~ ~r/article_\d+_\d+/
+          _ ->
+            false
+        end)
+
+      _ ->
+        # Can't inspect the file — don't skip
+        true
     end
+  end
+
+  defp commit_delivered_articles(recipe_id, run_id) do
+    case :ets.lookup(:delivery_buffer, run_id) do
+      [{^run_id, guids}] -> DeliveredArticles.record_articles(recipe_id, guids)
+      [] -> :ok
+    end
+  end
+
+  defp clear_delivery_buffer(run_id) do
+    :ets.delete(:delivery_buffer, run_id)
+  end
+
+  defp proxy_base_url do
+    port =
+      :courier
+      |> Application.get_env(CourierWeb.Endpoint, [])
+      |> get_in([:http, :port])
+      |> then(&(&1 || 4000))
+
+    "http://localhost:#{port}"
   end
 
   defp run_convert(recipe_file, epub_file, _recipe) do

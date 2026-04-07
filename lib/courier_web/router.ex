@@ -15,6 +15,10 @@ defmodule CourierWeb.Router do
   end
 
   scope "/", CourierWeb do
+    get "/proxy/feed", FeedProxyController, :show
+  end
+
+  scope "/", CourierWeb do
     pipe_through :browser
 
     get "/", PageController, :home

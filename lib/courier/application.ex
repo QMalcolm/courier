@@ -7,6 +7,8 @@ defmodule Courier.Application do
 
   @impl true
   def start(_type, _args) do
+    :ets.new(:delivery_buffer, [:set, :public, :named_table])
+
     children = [
       CourierWeb.Telemetry,
       Courier.Repo,
