@@ -44,6 +44,14 @@ defmodule Courier.Subscriptions do
     )
   end
 
+  def list_enabled_subscriptions_for_recipes(recipe_ids) do
+    Repo.all(
+      from s in Subscription,
+        where: s.recipe_id in ^recipe_ids and s.enabled == true,
+        preload: [:recipe, :device]
+    )
+  end
+
   def get_subscription!(id), do: Repo.get!(Subscription, id) |> Repo.preload([:recipe, :device])
 
   def create_subscription(attrs \\ %{}) do

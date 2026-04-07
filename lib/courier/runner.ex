@@ -24,11 +24,13 @@ defmodule Courier.Runner do
   alias Courier.Subscriptions.Subscription
 
   @doc """
-  Runs deliveries for all currently enabled subscriptions.
-  Called by Quantum on schedule.
+  Runs deliveries for enabled subscriptions whose recipe is associated with
+  the given schedule. Called by Quantum on schedule.
   """
-  def run_all_enabled do
-    Courier.Subscriptions.list_enabled_subscriptions()
+  def run_for_schedule(schedule_id) do
+    recipe_ids = Courier.Schedules.list_recipe_ids_for_schedule(schedule_id)
+
+    Courier.Subscriptions.list_enabled_subscriptions_for_recipes(recipe_ids)
     |> Enum.each(&run/1)
   end
 

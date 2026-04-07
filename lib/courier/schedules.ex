@@ -4,6 +4,7 @@ defmodule Courier.Schedules do
 
   alias Courier.Repo
   alias Courier.Schedules.Schedule
+  alias Courier.Schedules.ScheduleRecipe
 
   def list_schedules do
     Repo.all(from s in Schedule, order_by: [s.hour, s.minute])
@@ -33,6 +34,38 @@ defmodule Courier.Schedules do
 
   def change_schedule(%Schedule{} = schedule, attrs \\ %{}) do
     Schedule.changeset(schedule, attrs)
+  end
+
+  @doc "Returns all recipe IDs associated with the given schedule."
+  def list_recipe_ids_for_schedule(schedule_id) do
+    Repo.all(
+      from sr in ScheduleRecipe,
+        where: sr.schedule_id == ^schedule_id,
+        select: sr.recipe_id
+    )
+  end
+
+  @doc "Returns a MapSet of recipe IDs that have at least one schedule."
+  def list_scheduled_recipe_ids do
+    Repo.all(from sr in ScheduleRecipe, select: sr.recipe_id, distinct: true)
+    |> MapSet.new()
+  end
+
+  @doc "Toggles a recipe association for a schedule, returning the updated recipe ID set."
+  def toggle_recipe(schedule_id, recipe_id, current_ids) do
+    case Repo.get_by(ScheduleRecipe, schedule_id: schedule_id, recipe_id: recipe_id) do
+      nil ->
+        {:ok, _} =
+          %ScheduleRecipe{}
+          |> ScheduleRecipe.changeset(%{schedule_id: schedule_id, recipe_id: recipe_id})
+          |> Repo.insert()
+
+        MapSet.put(current_ids, recipe_id)
+
+      sr ->
+        {:ok, _} = Repo.delete(sr)
+        MapSet.delete(current_ids, recipe_id)
+    end
   end
 
   @doc """
@@ -76,7 +109,7 @@ defmodule Courier.Schedules do
       |> Quantum.Job.set_name(job_name(schedule))
       |> Quantum.Job.set_schedule(Crontab.CronExpression.Parser.parse!(cron))
       |> Quantum.Job.set_timezone(timezone)
-      |> Quantum.Job.set_task({Courier.Runner, :run_all_enabled, []})
+      |> Quantum.Job.set_task({Courier.Runner, :run_for_schedule, [schedule.id]})
 
     Courier.Scheduler.add_job(job)
     Logger.info("[Schedules] Registered job #{job_name(schedule)} — #{cron} #{timezone}")

@@ -29,6 +29,9 @@
     </button>
   </:col>
   <:action :let={s}>
+    <.link patch={~p"/schedule/#{s}/recipes"}>Recipes</.link>
+  </:action>
+  <:action :let={s}>
     <.link
       phx-click={JS.push("delete", value: %{id: s.id})}
       data-confirm="Delete this schedule?"
@@ -37,6 +40,41 @@
     </.link>
   </:action>
 </.table>
+
+<.modal
+  :if={@live_action == :recipes}
+  id="recipes-modal"
+  show
+  on_cancel={JS.patch(~p"/schedule")}
+>
+  <.header>
+    Recipes — {@schedule.label || format_time(@schedule)}
+    <:subtitle>Check recipes to run on this schedule.</:subtitle>
+  </.header>
+
+  <div class="mt-6 divide-y divide-zinc-100">
+    <label
+      :for={recipe <- @all_recipes}
+      class="flex items-center gap-4 py-3 cursor-pointer hover:bg-zinc-50 -mx-4 px-4 rounded-lg"
+    >
+      <input
+        type="checkbox"
+        checked={MapSet.member?(@scheduled_recipe_ids, recipe.id)}
+        phx-click="toggle_recipe"
+        phx-value-recipe_id={recipe.id}
+        class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+      />
+      <div>
+        <div class="text-sm font-medium text-zinc-900">{recipe.name}</div>
+        <div class="text-xs text-zinc-500">every {recipe.oldest_article} days · max {recipe.max_articles} articles</div>
+      </div>
+    </label>
+
+    <p :if={@all_recipes == []} class="py-4 text-sm text-zinc-500">
+      No recipes yet. <.link patch={~p"/recipes/new"} class="underline">Add one</.link>.
+    </p>
+  </div>
+</.modal>
 
 <.modal
   :if={@live_action == :new}

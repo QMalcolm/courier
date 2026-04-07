@@ -12,7 +12,16 @@
   rows={@recipes}
   row_click={fn recipe -> JS.patch(~p"/recipes/#{recipe}/edit") end}
 >
-  <:col :let={recipe} label="Name">{recipe.name}</:col>
+  <:col :let={recipe} label="Name">
+    <span>{recipe.name}</span>
+    <span
+      :if={not MapSet.member?(@scheduled_recipe_ids, recipe.id)}
+      class="ml-2 text-xs font-medium text-amber-600"
+      title="This recipe is not associated with any schedule and will never run automatically."
+    >
+      No schedule
+    </span>
+  </:col>
   <:col :let={recipe} label="Slug"><code class="text-xs text-zinc-500">{recipe.slug}</code></:col>
   <:col :let={recipe} label="Oldest article">{recipe.oldest_article}d</:col>
   <:col :let={recipe} label="Max articles">{recipe.max_articles}</:col>

@@ -3,6 +3,7 @@ defmodule CourierWeb.RecipeLive.Index do
 
   alias Courier.Library
   alias Courier.Library.Recipe
+  alias Courier.Schedules
 
   @recipe_template """
   feeds:
@@ -18,7 +19,10 @@ defmodule CourierWeb.RecipeLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :recipes, Library.list_recipes())}
+    {:ok,
+     socket
+     |> assign(:recipes, Library.list_recipes())
+     |> assign(:scheduled_recipe_ids, Schedules.list_scheduled_recipe_ids())}
   end
 
   @impl true
@@ -46,7 +50,10 @@ defmodule CourierWeb.RecipeLive.Index do
 
   @impl true
   def handle_info({CourierWeb.RecipeLive.FormComponent, {:saved, _recipe}}, socket) do
-    {:noreply, assign(socket, :recipes, Library.list_recipes())}
+    {:noreply,
+     socket
+     |> assign(:recipes, Library.list_recipes())
+     |> assign(:scheduled_recipe_ids, Schedules.list_scheduled_recipe_ids())}
   end
 
   @impl true

@@ -1,6 +1,7 @@
 defmodule CourierWeb.ScheduleLive.Index do
   use CourierWeb, :live_view
 
+  alias Courier.Library
   alias Courier.Schedules
   alias Courier.Schedules.Schedule
 
@@ -53,17 +54,36 @@ defmodule CourierWeb.ScheduleLive.Index do
      socket
      |> assign(:schedules, Schedules.list_schedules())
      |> assign(:days, @days)
-     |> assign(:timezones, @timezones)}
+     |> assign(:timezones, @timezones)
+     |> assign(:schedule, nil)}
   end
 
   @impl true
-  def handle_params(_params, _url, socket) do
-    action = socket.assigns.live_action
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
 
-    {:noreply,
-     socket
-     |> assign(:page_title, if(action == :new, do: "New Schedule", else: "Schedule"))
-     |> assign(:form, blank_form())}
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:page_title, "Schedule")
+    |> assign(:form, blank_form())
+  end
+
+  defp apply_action(socket, :new, _params) do
+    socket
+    |> assign(:page_title, "New Schedule")
+    |> assign(:form, blank_form())
+  end
+
+  defp apply_action(socket, :recipes, %{"id" => id}) do
+    schedule = Schedules.get_schedule!(id)
+    recipe_ids = Schedules.list_recipe_ids_for_schedule(id) |> MapSet.new()
+
+    socket
+    |> assign(:page_title, "Recipes — #{schedule.label || format_time(schedule)}")
+    |> assign(:schedule, schedule)
+    |> assign(:all_recipes, Library.list_recipes())
+    |> assign(:scheduled_recipe_ids, recipe_ids)
   end
 
   @impl true
@@ -96,6 +116,16 @@ defmodule CourierWeb.ScheduleLive.Index do
     schedule = Schedules.get_schedule!(id)
     {:ok, _} = Schedules.delete_schedule(schedule)
     {:noreply, assign(socket, :schedules, Schedules.list_schedules())}
+  end
+
+  def handle_event("toggle_recipe", %{"recipe_id" => recipe_id}, socket) do
+    schedule = socket.assigns.schedule
+    recipe_id = String.to_integer(recipe_id)
+
+    scheduled_recipe_ids =
+      Schedules.toggle_recipe(schedule.id, recipe_id, socket.assigns.scheduled_recipe_ids)
+
+    {:noreply, assign(socket, :scheduled_recipe_ids, scheduled_recipe_ids)}
   end
 
   defp blank_form do

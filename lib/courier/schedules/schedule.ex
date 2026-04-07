@@ -12,6 +12,8 @@ defmodule Courier.Schedules.Schedule do
     field :timezone, :string, default: "UTC"
     field :enabled, :boolean, default: true
 
+    many_to_many :recipes, Courier.Library.Recipe, join_through: "schedule_recipes"
+
     timestamps(type: :utc_datetime)
   end
 
