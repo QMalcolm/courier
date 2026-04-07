@@ -59,6 +59,8 @@
       <.input field={@form[:minute]} type="number" label="Minute (0–59)" min="0" max="59" />
     </div>
 
+    <.input field={@form[:timezone]} type="select" label="Timezone" options={@timezones} />
+
     <div>
       <label class="block text-sm font-semibold leading-6 text-zinc-800 mb-2">Days</label>
       <div class="flex flex-wrap gap-3">

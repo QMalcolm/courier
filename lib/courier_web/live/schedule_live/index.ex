@@ -7,12 +7,53 @@ defmodule CourierWeb.ScheduleLive.Index do
   @days [{"Mon", "mon"}, {"Tue", "tue"}, {"Wed", "wed"}, {"Thu", "thu"},
          {"Fri", "fri"}, {"Sat", "sat"}, {"Sun", "sun"}]
 
+  @timezones [
+    {"UTC", "UTC"},
+    # Americas
+    {"America/New_York", "Eastern Time (US & Canada)"},
+    {"America/Chicago", "Central Time (US & Canada)"},
+    {"America/Denver", "Mountain Time (US & Canada)"},
+    {"America/Phoenix", "Arizona (no DST)"},
+    {"America/Los_Angeles", "Pacific Time (US & Canada)"},
+    {"America/Anchorage", "Alaska"},
+    {"Pacific/Honolulu", "Hawaii"},
+    {"America/Toronto", "Toronto"},
+    {"America/Vancouver", "Vancouver"},
+    {"America/Sao_Paulo", "Brasilia"},
+    {"America/Mexico_City", "Mexico City"},
+    # Europe
+    {"Europe/London", "London"},
+    {"Europe/Dublin", "Dublin"},
+    {"Europe/Paris", "Paris"},
+    {"Europe/Berlin", "Berlin"},
+    {"Europe/Amsterdam", "Amsterdam"},
+    {"Europe/Rome", "Rome"},
+    {"Europe/Madrid", "Madrid"},
+    {"Europe/Stockholm", "Stockholm"},
+    {"Europe/Helsinki", "Helsinki"},
+    {"Europe/Athens", "Athens"},
+    {"Europe/Moscow", "Moscow"},
+    # Asia / Pacific
+    {"Asia/Dubai", "Dubai"},
+    {"Asia/Kolkata", "Mumbai / Kolkata"},
+    {"Asia/Bangkok", "Bangkok"},
+    {"Asia/Singapore", "Singapore"},
+    {"Asia/Shanghai", "Beijing / Shanghai"},
+    {"Asia/Tokyo", "Tokyo"},
+    {"Asia/Seoul", "Seoul"},
+    {"Australia/Sydney", "Sydney"},
+    {"Australia/Melbourne", "Melbourne"},
+    {"Australia/Perth", "Perth"},
+    {"Pacific/Auckland", "Auckland"}
+  ]
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:schedules, Schedules.list_schedules())
-     |> assign(:days, @days)}
+     |> assign(:days, @days)
+     |> assign(:timezones, @timezones)}
   end
 
   @impl true
@@ -58,7 +99,7 @@ defmodule CourierWeb.ScheduleLive.Index do
   end
 
   defp blank_form do
-    to_form(Schedule.changeset(%Schedule{hour: 7, minute: 0, days: "mon,tue,wed,thu,fri"}, %{}))
+    to_form(Schedule.changeset(%Schedule{hour: 7, minute: 0, days: "mon,tue,wed,thu,fri", timezone: "UTC"}, %{}))
   end
 
   def day_checked?(form_or_schedule, day) do
@@ -74,8 +115,9 @@ defmodule CourierWeb.ScheduleLive.Index do
     day in String.split(days, ",", trim: true)
   end
 
-  def format_time(%Schedule{hour: h, minute: m}) do
-    :io_lib.format("~2..0B:~2..0B", [h, m]) |> IO.iodata_to_binary()
+  def format_time(%Schedule{hour: h, minute: m, timezone: tz}) do
+    time = :io_lib.format("~2..0B:~2..0B", [h, m]) |> IO.iodata_to_binary()
+    "#{time} #{tz || "UTC"}"
   end
 
   def format_days(%Schedule{} = schedule) do

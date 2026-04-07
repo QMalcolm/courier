@@ -69,15 +69,17 @@ defmodule Courier.Schedules do
 
   defp add_quantum_job(%Schedule{} = schedule) do
     cron = Schedule.to_cron(schedule)
+    timezone = schedule.timezone || "UTC"
 
     job =
       Courier.Scheduler.new_job()
       |> Quantum.Job.set_name(job_name(schedule))
       |> Quantum.Job.set_schedule(Crontab.CronExpression.Parser.parse!(cron))
+      |> Quantum.Job.set_timezone(timezone)
       |> Quantum.Job.set_task({Courier.Runner, :run_all_enabled, []})
 
     Courier.Scheduler.add_job(job)
-    Logger.info("[Schedules] Registered job #{job_name(schedule)} — #{cron}")
+    Logger.info("[Schedules] Registered job #{job_name(schedule)} — #{cron} #{timezone}")
   end
 
   defp remove_quantum_job(%Schedule{} = schedule) do

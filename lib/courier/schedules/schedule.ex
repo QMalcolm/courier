@@ -9,6 +9,7 @@ defmodule Courier.Schedules.Schedule do
     field :hour, :integer
     field :minute, :integer
     field :days, :string
+    field :timezone, :string, default: "UTC"
     field :enabled, :boolean, default: true
 
     timestamps(type: :utc_datetime)
@@ -18,8 +19,8 @@ defmodule Courier.Schedules.Schedule do
     attrs = normalize_days(attrs)
 
     schedule
-    |> cast(attrs, [:label, :hour, :minute, :days, :enabled])
-    |> validate_required([:hour, :minute, :days])
+    |> cast(attrs, [:label, :hour, :minute, :days, :timezone, :enabled])
+    |> validate_required([:hour, :minute, :days, :timezone])
     |> validate_number(:hour, greater_than_or_equal_to: 0, less_than: 24)
     |> validate_number(:minute, greater_than_or_equal_to: 0, less_than: 60)
     |> validate_days()
