@@ -50,6 +50,12 @@ defmodule CourierWeb.RecipeLive.Index do
   end
 
   @impl true
+  def handle_event("run_now", %{"id" => id}, socket) do
+    Courier.Runner.run_recipe(id)
+    {:noreply, put_flash(socket, :info, "Run started — check Logs for progress.")}
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     recipe = Library.get_recipe!(id)
     {:ok, _} = Library.delete_recipe(recipe)

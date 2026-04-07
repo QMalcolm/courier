@@ -20,6 +20,11 @@
     <.link patch={~p"/recipes/#{recipe}/edit"}>Edit</.link>
   </:action>
   <:action :let={recipe}>
+    <.link phx-click="run_now" phx-value-id={recipe.id} data-confirm="Run this recipe now for all subscribed devices?">
+      Run
+    </.link>
+  </:action>
+  <:action :let={recipe}>
     <.link
       phx-click={JS.push("delete", value: %{id: recipe.id}) |> hide("#recipe-#{recipe.id}")}
       data-confirm="Delete this recipe and all its subscriptions and runs?"

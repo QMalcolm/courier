@@ -32,6 +32,15 @@ defmodule Courier.Runner do
     |> Enum.each(&run/1)
   end
 
+  @doc """
+  Runs deliveries for all enabled subscriptions for a specific recipe.
+  Used for manual one-off runs.
+  """
+  def run_recipe(recipe_id) do
+    Courier.Subscriptions.list_enabled_subscriptions_for_recipe(recipe_id)
+    |> Enum.each(&run/1)
+  end
+
   @doc "Starts an async delivery for the given subscription."
   def run(%Subscription{recipe: recipe, device: device} = _subscription) do
     Task.Supervisor.start_child(Courier.TaskSupervisor, fn ->
