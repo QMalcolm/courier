@@ -9,6 +9,7 @@ defmodule Courier.Runs.Run do
     field :started_at, :utc_datetime
     field :finished_at, :utc_datetime
     field :log_output, :string
+    field :article_count, :integer
 
     belongs_to :recipe, Courier.Library.Recipe
     belongs_to :device, Courier.Devices.Device
@@ -19,7 +20,7 @@ defmodule Courier.Runs.Run do
   @doc false
   def changeset(run, attrs) do
     run
-    |> cast(attrs, [:started_at, :finished_at, :status, :log_output, :recipe_id, :device_id])
+    |> cast(attrs, [:started_at, :finished_at, :status, :log_output, :article_count, :recipe_id, :device_id])
     |> validate_required([:recipe_id, :device_id, :status])
     |> validate_inclusion(:status, @statuses)
   end

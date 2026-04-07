@@ -65,18 +65,19 @@ defmodule Courier.Runner do
 
     broadcast({:run_updated, run})
 
-    {status, log} =
+    {status, log, article_count} =
       if has_new_articles?(recipe) do
         deliver(recipe, device, Integer.to_string(run.id))
       else
-        {"skipped", "=== pre-flight ===\nAll articles already delivered.\n"}
+        {"skipped", "=== pre-flight ===\nAll articles already delivered.\n", 0}
       end
 
     {:ok, finished_run} =
       Runs.update_run(run, %{
         status: status,
         finished_at: DateTime.utc_now(),
-        log_output: log
+        log_output: log,
+        article_count: article_count
       })
 
     Logger.info("[Runner] Finished: recipe=#{recipe.slug} status=#{status}")
@@ -105,10 +106,10 @@ defmodule Courier.Runner do
     epub_file = Path.join(work_dir, "output.epub")
     File.write!(recipe_file, Recipe.to_python(recipe, run_id, proxy_base_url()))
 
-    {status, log} = run_steps(recipe_file, epub_file, recipe, device, run_id)
+    {status, log, article_count} = run_steps(recipe_file, epub_file, recipe, device, run_id)
 
     File.rm_rf!(work_dir)
-    {status, log}
+    {status, log, article_count}
   end
 
   defp run_steps(recipe_file, epub_file, recipe, device, run_id) do
@@ -120,18 +121,18 @@ defmodule Courier.Runner do
 
             case run_smtp(epub_file, recipe, device) do
               {:ok, smtp_log} ->
-                commit_delivered_articles(recipe.id, run_id)
-                {"success", convert_log <> archive_log <> smtp_log}
+                article_count = commit_delivered_articles(recipe.id, run_id)
+                {"success", convert_log <> archive_log <> smtp_log, article_count}
 
               {:error, smtp_log} ->
-                {"failure", convert_log <> archive_log <> smtp_log}
+                {"failure", convert_log <> archive_log <> smtp_log, nil}
             end
           else
-            {"skipped", convert_log <> "=== skip ===\nNo new articles found.\n"}
+            {"skipped", convert_log <> "=== skip ===\nNo new articles found.\n", 0}
           end
 
         {:error, convert_log} ->
-          {"failure", convert_log}
+          {"failure", convert_log, nil}
       end
 
     clear_delivery_buffer(run_id)
@@ -158,8 +159,10 @@ defmodule Courier.Runner do
 
   defp commit_delivered_articles(recipe_id, run_id) do
     case :ets.lookup(:delivery_buffer, run_id) do
-      [{^run_id, guids}] -> DeliveredArticles.record_articles(recipe_id, guids)
-      [] -> :ok
+      [{^run_id, guids}] ->
+        {count, _} = DeliveredArticles.record_articles(recipe_id, guids)
+        count
+      [] -> 0
     end
   end
 

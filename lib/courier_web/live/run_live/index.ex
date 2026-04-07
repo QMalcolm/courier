@@ -29,6 +29,12 @@ defmodule CourierWeb.RunLive.Index do
   def status_class("skipped"), do: "bg-amber-100 text-amber-700"
   def status_class(_), do: "bg-zinc-100 text-zinc-600"
 
+  def article_count_display(%{article_count: n}) when is_integer(n) do
+    if n == 1, do: "1 article", else: "#{n} articles"
+  end
+
+  def article_count_display(_), do: "—"
+
   def duration(%{started_at: nil}), do: "—"
   def duration(%{finished_at: nil}), do: "running…"
 
