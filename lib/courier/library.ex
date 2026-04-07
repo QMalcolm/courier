@@ -31,37 +31,44 @@ defmodule Courier.Library do
   end
 
   @doc """
-  Checks that every feed URL in the recipe params is reachable.
-  Feed URLs are fetched in parallel. Returns :ok or {:error, [unreachable_urls]}.
-  Fails open (returns :ok) if the source YAML is absent/invalid — let the
-  changeset validator surface that error instead.
+  Checks every feed URL in the recipe params and returns per-feed results.
+  Feeds are fetched in parallel. Each result is a map with:
+    %{name: string, url: string, ok: boolean, detail: string}
+  Returns [] if source YAML is absent or invalid.
   """
-  def check_feeds(%{"source" => source}) do
+  def check_feeds_detailed(%{"source" => source}) do
     case YamlElixir.read_from_string(source) do
       {:ok, %{"feeds" => feeds}} when is_list(feeds) ->
-        urls =
-          feeds
-          |> Enum.filter(&is_map/1)
-          |> Enum.map(& &1["url"])
-          |> Enum.filter(&is_binary/1)
+        valid_feeds =
+          Enum.filter(feeds, &(is_map(&1) and is_binary(&1["name"]) and is_binary(&1["url"])))
 
-        bad_urls =
-          urls
-          |> Task.async_stream(&{&1, FeedParser.fetch_guids(&1)},
-            timeout: 10_000,
-            on_timeout: :kill_task
-          )
-          |> Enum.flat_map(fn
-            {:ok, {url, {:error, _}}} -> [url]
-            _ -> []
-          end)
+        valid_feeds
+        |> Task.async_stream(
+          fn feed ->
+            name = feed["name"]
+            url = feed["url"]
 
-        if bad_urls == [], do: :ok, else: {:error, bad_urls}
+            case FeedParser.fetch_guids(url) do
+              {:ok, guids} -> %{name: name, url: url, ok: true, detail: article_label(length(guids))}
+              {:error, reason} -> %{name: name, url: url, ok: false, detail: reason}
+            end
+          end,
+          timeout: 10_000,
+          on_timeout: :kill_task
+        )
+        |> Enum.zip(valid_feeds)
+        |> Enum.map(fn
+          {{:ok, result}, _feed} -> result
+          {{:exit, _}, feed} -> %{name: feed["name"], url: feed["url"], ok: false, detail: "timed out"}
+        end)
 
       _ ->
-        :ok
+        []
     end
   end
 
-  def check_feeds(_), do: :ok
+  def check_feeds_detailed(_), do: []
+
+  defp article_label(1), do: "1 article found"
+  defp article_label(n), do: "#{n} articles found"
 end

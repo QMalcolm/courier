@@ -38,7 +38,32 @@ defmodule CourierWeb.RecipeLive.FormComponent do
           ><%= Phoenix.HTML.Form.normalize_value("textarea", @form[:source].value) %></textarea>
           <.error :for={msg <- Enum.map(@form[:source].errors, &translate_error(&1))}>{msg}</.error>
         </div>
+        <div :if={@feed_check_results != nil} class="rounded-lg border border-zinc-200 divide-y divide-zinc-100">
+          <div :if={@feed_check_results == []} class="px-3 py-2 text-sm text-zinc-500">
+            No valid feeds found in source YAML.
+          </div>
+          <div :for={r <- @feed_check_results} class="flex items-start gap-2 px-3 py-2 text-sm">
+            <span class={["font-bold mt-0.5", if(r.ok, do: "text-green-600", else: "text-red-600")]}>
+              {if r.ok, do: "✓", else: "✗"}
+            </span>
+            <div>
+              <span class="font-medium text-zinc-800">{r.name}</span>
+              <span class={["ml-1", if(r.ok, do: "text-zinc-500", else: "text-red-600")]}>
+                — {r.detail}
+              </span>
+            </div>
+          </div>
+        </div>
         <:actions>
+          <button
+            type="button"
+            phx-click="check_feeds"
+            phx-target={@myself}
+            phx-disable-with="Checking..."
+            class="rounded-lg bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 py-2 px-3 text-sm font-semibold leading-6"
+          >
+            Check Feeds
+          </button>
           <.button phx-disable-with="Saving...">Save Recipe</.button>
         </:actions>
       </.simple_form>
@@ -51,41 +76,32 @@ defmodule CourierWeb.RecipeLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:form, fn -> to_form(Library.change_recipe(recipe)) end)}
+     |> assign_new(:form, fn -> to_form(Library.change_recipe(recipe)) end)
+     |> assign_new(:feed_check_results, fn -> nil end)
+     |> assign_new(:current_params, fn -> %{"source" => recipe.source || ""} end)}
   end
 
   @impl true
   def handle_event("validate", %{"recipe" => recipe_params}, socket) do
     changeset = Library.change_recipe(socket.assigns.recipe, recipe_params)
-    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+
+    {:noreply,
+     socket
+     |> assign(form: to_form(changeset, action: :validate))
+     |> assign(current_params: recipe_params)
+     |> assign(feed_check_results: nil)}
+  end
+
+  def handle_event("check_feeds", _params, socket) do
+    results = Library.check_feeds_detailed(socket.assigns.current_params)
+    {:noreply, assign(socket, feed_check_results: results)}
   end
 
   def handle_event("save", %{"recipe" => recipe_params}, socket) do
     save_recipe(socket, socket.assigns.action, recipe_params)
   end
 
-  defp save_recipe(socket, action, recipe_params) do
-    changeset = Library.change_recipe(socket.assigns.recipe, recipe_params)
-
-    if changeset.valid? do
-      case Library.check_feeds(recipe_params) do
-        :ok ->
-          do_save(socket, action, recipe_params)
-
-        {:error, bad_urls} ->
-          changeset_with_errors =
-            Enum.reduce(bad_urls, changeset, fn url, cs ->
-              Ecto.Changeset.add_error(cs, :source, "could not reach feed: #{url}")
-            end)
-
-          {:noreply, assign(socket, form: to_form(changeset_with_errors, action: :validate))}
-      end
-    else
-      do_save(socket, action, recipe_params)
-    end
-  end
-
-  defp do_save(socket, :edit, recipe_params) do
+  defp save_recipe(socket, :edit, recipe_params) do
     case Library.update_recipe(socket.assigns.recipe, recipe_params) do
       {:ok, recipe} ->
         notify_parent({:saved, recipe})
@@ -100,7 +116,7 @@ defmodule CourierWeb.RecipeLive.FormComponent do
     end
   end
 
-  defp do_save(socket, :new, recipe_params) do
+  defp save_recipe(socket, :new, recipe_params) do
     case Library.create_recipe(recipe_params) do
       {:ok, recipe} ->
         notify_parent({:saved, recipe})
