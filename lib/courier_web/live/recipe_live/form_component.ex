@@ -64,7 +64,28 @@ defmodule CourierWeb.RecipeLive.FormComponent do
     save_recipe(socket, socket.assigns.action, recipe_params)
   end
 
-  defp save_recipe(socket, :edit, recipe_params) do
+  defp save_recipe(socket, action, recipe_params) do
+    changeset = Library.change_recipe(socket.assigns.recipe, recipe_params)
+
+    if changeset.valid? do
+      case Library.check_feeds(recipe_params) do
+        :ok ->
+          do_save(socket, action, recipe_params)
+
+        {:error, bad_urls} ->
+          changeset_with_errors =
+            Enum.reduce(bad_urls, changeset, fn url, cs ->
+              Ecto.Changeset.add_error(cs, :source, "could not reach feed: #{url}")
+            end)
+
+          {:noreply, assign(socket, form: to_form(changeset_with_errors, action: :validate))}
+      end
+    else
+      do_save(socket, action, recipe_params)
+    end
+  end
+
+  defp do_save(socket, :edit, recipe_params) do
     case Library.update_recipe(socket.assigns.recipe, recipe_params) do
       {:ok, recipe} ->
         notify_parent({:saved, recipe})
@@ -79,7 +100,7 @@ defmodule CourierWeb.RecipeLive.FormComponent do
     end
   end
 
-  defp save_recipe(socket, :new, recipe_params) do
+  defp do_save(socket, :new, recipe_params) do
     case Library.create_recipe(recipe_params) do
       {:ok, recipe} ->
         notify_parent({:saved, recipe})
