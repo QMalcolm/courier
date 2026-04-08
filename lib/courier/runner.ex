@@ -194,10 +194,14 @@ defmodule Courier.Runner do
         ""
 
       library_path ->
-        case cmd(calibre_bin("calibredb"), ["add", epub_file, "--library-path", library_path], "calibredb add") do
-          {:ok, log} -> log
-          {:error, log} -> log
-        end
+        # calibredb refuses concurrent access to the library, so serialize all
+        # archive calls across tasks with a global lock.
+        :global.trans({:calibredb_lock, :archive}, fn ->
+          case cmd(calibre_bin("calibredb"), ["add", epub_file, "--library-path", library_path], "calibredb add") do
+            {:ok, log} -> log
+            {:error, log} -> log
+          end
+        end)
     end
   end
 
