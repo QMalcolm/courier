@@ -78,6 +78,9 @@ ENV HOME=/tmp
 WORKDIR /app
 RUN chown nobody /app
 
+# Create /data owned by nobody so the SQLite volume is writable at runtime
+RUN mkdir -p /data && chown nobody /data
+
 ENV MIX_ENV="prod"
 # Start in server mode automatically
 ENV PHX_SERVER=true

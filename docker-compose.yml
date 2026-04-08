@@ -21,9 +21,9 @@ services:
       # PHX_SCHEME: https
 
       # Calibre delivery settings
-      COURIER_SMTP_FROM: you@gmail.com
-      COURIER_SMTP_USERNAME: you@gmail.com
-      COURIER_SMTP_PASSWORD: your_app_password
+      COURIER_SMTP_FROM: ${COURIER_SMTP_FROM}
+      COURIER_SMTP_USERNAME: ${COURIER_SMTP_USERNAME}
+      COURIER_SMTP_PASSWORD: ${COURIER_SMTP_PASSWORD}
       COURIER_SMTP_RELAY: smtp.gmail.com
       COURIER_SMTP_PORT: "587"
       COURIER_SMTP_ENCRYPTION: TLS
