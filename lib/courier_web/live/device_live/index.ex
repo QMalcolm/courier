@@ -73,6 +73,9 @@ defmodule CourierWeb.DeviceLive.Index do
           MapSet.delete(socket.assigns.subscribed_ids, recipe_id)
       end
 
-    {:noreply, assign(socket, :subscribed_ids, subscribed_ids)}
+    {:noreply,
+     socket
+     |> assign(:subscribed_ids, subscribed_ids)
+     |> put_flash(:info, "Saved")}
   end
 end
