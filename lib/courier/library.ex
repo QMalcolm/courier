@@ -42,24 +42,14 @@ defmodule Courier.Library do
         valid_feeds =
           Enum.filter(feeds, &(is_map(&1) and is_binary(&1["name"]) and is_binary(&1["url"])))
 
-        valid_feeds
-        |> Task.async_stream(
-          fn feed ->
-            name = feed["name"]
-            url = feed["url"]
+        Enum.map(valid_feeds, fn feed ->
+          name = feed["name"]
+          url = feed["url"]
 
-            case FeedParser.fetch_guids(url) do
-              {:ok, guids} -> %{name: name, url: url, ok: true, detail: article_label(length(guids))}
-              {:error, reason} -> %{name: name, url: url, ok: false, detail: reason}
-            end
-          end,
-          timeout: 10_000,
-          on_timeout: :kill_task
-        )
-        |> Enum.zip(valid_feeds)
-        |> Enum.map(fn
-          {{:ok, result}, _feed} -> result
-          {{:exit, _}, feed} -> %{name: feed["name"], url: feed["url"], ok: false, detail: "timed out"}
+          case FeedParser.fetch_guids(url) do
+            {:ok, guids} -> %{name: name, url: url, ok: true, detail: article_label(length(guids))}
+            {:error, reason} -> %{name: name, url: url, ok: false, detail: reason}
+          end
         end)
 
       _ ->

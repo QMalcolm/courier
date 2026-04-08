@@ -30,7 +30,7 @@ defmodule Courier.FeedParser do
   defp fetch_body(url, redirects_left \\ 5) do
     request = Finch.build(:get, url, [{"user-agent", "Courier/1.0"}])
 
-    case Finch.request(request, Courier.Finch) do
+    case Finch.request(request, Courier.Finch, receive_timeout: 10_000) do
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
