@@ -66,10 +66,14 @@ defmodule Courier.Runner do
     broadcast({:run_updated, run})
 
     {status, log, article_count} =
-      if has_new_articles?(recipe) do
-        deliver(recipe, device, Integer.to_string(run.id))
-      else
-        {"skipped", "=== pre-flight ===\nAll articles already delivered.\n", 0}
+      try do
+        if has_new_articles?(recipe) do
+          deliver(recipe, device, Integer.to_string(run.id))
+        else
+          {"skipped", "=== pre-flight ===\nAll articles already delivered.\n", 0}
+        end
+      rescue
+        e -> {"failure", "=== error ===\n#{Exception.message(e)}\n", nil}
       end
 
     {:ok, finished_run} =
@@ -139,14 +143,14 @@ defmodule Courier.Runner do
     result
   end
 
-  # Calibre news EPUBs place article HTML files at OEBPS/article_N_M.html.
+  # Calibre news EPUBs place article HTML files under feed_N/article_M/ directories.
   # If none exist the EPUB contains only boilerplate (cover, TOC, stylesheet).
   defp epub_has_articles?(epub_file) do
     case :zip.list_dir(String.to_charlist(epub_file)) do
       {:ok, entries} ->
         Enum.any?(entries, fn
           {:zip_file, name, _, _, _, _} ->
-            to_string(name) =~ ~r/article_\d+_\d+/
+            to_string(name) =~ ~r/article_\d+/
           _ ->
             false
         end)
