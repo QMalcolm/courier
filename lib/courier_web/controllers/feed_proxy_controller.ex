@@ -36,7 +36,7 @@ defmodule CourierWeb.FeedProxyController do
 
       {:ok, %{status: status, headers: headers}} when status in [301, 302, 307, 308] and redirects_left > 0 ->
         case List.keyfind(headers, "location", 0) do
-          {"location", location} -> fetch_feed(location, redirects_left - 1)
+          {"location", location} -> fetch_feed(resolve_url(url, location), redirects_left - 1)
           nil -> {:error, "redirect with no Location header"}
         end
 
@@ -86,6 +86,13 @@ defmodule CourierWeb.FeedProxyController do
 
     filtered_body = kept_parts |> Enum.reverse() |> IO.iodata_to_binary()
     {filtered_body, served_guids}
+  end
+
+  defp resolve_url(_base, location) when binary_part(location, 0, 4) == "http", do: location
+
+  defp resolve_url(base, location) do
+    uri = URI.parse(base)
+    "#{uri.scheme}://#{uri.host}#{location}"
   end
 
   defp extract_rss_guid(item_block), do: FeedParser.extract_rss_guid(item_block)
