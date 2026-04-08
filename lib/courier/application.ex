@@ -26,7 +26,9 @@ defmodule Courier.Application do
       # Start to serve requests, typically the last entry
       CourierWeb.Endpoint,
       # Restore persisted schedules into Quantum after everything else is up
-      {Task, fn -> Courier.Schedules.sync_quantum() end}
+      {Task, fn -> Courier.Schedules.sync_quantum() end},
+      # Mark any runs left in "running" state from a previous crash as failed
+      {Task, fn -> Courier.Runs.mark_stale_runs_as_failed() end}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -99,7 +99,15 @@ defmodule CourierWeb.RecipeLive.FormComponent do
   end
 
   def handle_event("check_feeds", _params, socket) do
-    params = socket.assigns.current_params
+    # current_params may have an empty source if validate fired before CodeMirror
+    # synced the hidden textarea — fall back to the recipe's persisted source.
+    source =
+      case socket.assigns.current_params do
+        %{"source" => s} when is_binary(s) and s != "" -> s
+        _ -> socket.assigns.recipe.source || ""
+      end
+
+    params = %{"source" => source}
 
     {:noreply,
      socket

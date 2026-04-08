@@ -38,4 +38,22 @@ defmodule Courier.Runs do
   def change_run(%Run{} = run, attrs \\ %{}) do
     Run.changeset(run, attrs)
   end
+
+  @doc """
+  Marks any runs still in "running" status as "failure".
+  Called on application start to recover from crashes or ungraceful shutdowns
+  that left run records stuck.
+  """
+  def mark_stale_runs_as_failed do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(r in Run, where: r.status == "running"),
+      set: [
+        status: "failure",
+        finished_at: now,
+        log_output: "Run was interrupted (server restarted while running)."
+      ]
+    )
+  end
 end
