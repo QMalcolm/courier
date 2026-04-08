@@ -11,41 +11,41 @@ defmodule CourierWeb.ScheduleLive.Index do
   @timezones [
     {"UTC", "UTC"},
     # Americas
-    {"America/New_York", "Eastern Time (US & Canada)"},
-    {"America/Chicago", "Central Time (US & Canada)"},
-    {"America/Denver", "Mountain Time (US & Canada)"},
-    {"America/Phoenix", "Arizona (no DST)"},
-    {"America/Los_Angeles", "Pacific Time (US & Canada)"},
-    {"America/Anchorage", "Alaska"},
-    {"Pacific/Honolulu", "Hawaii"},
-    {"America/Toronto", "Toronto"},
-    {"America/Vancouver", "Vancouver"},
-    {"America/Sao_Paulo", "Brasilia"},
-    {"America/Mexico_City", "Mexico City"},
+    {"Eastern Time (US & Canada)", "America/New_York"},
+    {"Central Time (US & Canada)", "America/Chicago"},
+    {"Mountain Time (US & Canada)", "America/Denver"},
+    {"Arizona (no DST)", "America/Phoenix"},
+    {"Pacific Time (US & Canada)", "America/Los_Angeles"},
+    {"Alaska", "America/Anchorage"},
+    {"Hawaii", "Pacific/Honolulu"},
+    {"Toronto", "America/Toronto"},
+    {"Vancouver", "America/Vancouver"},
+    {"Brasilia", "America/Sao_Paulo"},
+    {"Mexico City", "America/Mexico_City"},
     # Europe
-    {"Europe/London", "London"},
-    {"Europe/Dublin", "Dublin"},
-    {"Europe/Paris", "Paris"},
-    {"Europe/Berlin", "Berlin"},
-    {"Europe/Amsterdam", "Amsterdam"},
-    {"Europe/Rome", "Rome"},
-    {"Europe/Madrid", "Madrid"},
-    {"Europe/Stockholm", "Stockholm"},
-    {"Europe/Helsinki", "Helsinki"},
-    {"Europe/Athens", "Athens"},
-    {"Europe/Moscow", "Moscow"},
+    {"London", "Europe/London"},
+    {"Dublin", "Europe/Dublin"},
+    {"Paris", "Europe/Paris"},
+    {"Berlin", "Europe/Berlin"},
+    {"Amsterdam", "Europe/Amsterdam"},
+    {"Rome", "Europe/Rome"},
+    {"Madrid", "Europe/Madrid"},
+    {"Stockholm", "Europe/Stockholm"},
+    {"Helsinki", "Europe/Helsinki"},
+    {"Athens", "Europe/Athens"},
+    {"Moscow", "Europe/Moscow"},
     # Asia / Pacific
-    {"Asia/Dubai", "Dubai"},
-    {"Asia/Kolkata", "Mumbai / Kolkata"},
-    {"Asia/Bangkok", "Bangkok"},
-    {"Asia/Singapore", "Singapore"},
-    {"Asia/Shanghai", "Beijing / Shanghai"},
-    {"Asia/Tokyo", "Tokyo"},
-    {"Asia/Seoul", "Seoul"},
-    {"Australia/Sydney", "Sydney"},
-    {"Australia/Melbourne", "Melbourne"},
-    {"Australia/Perth", "Perth"},
-    {"Pacific/Auckland", "Auckland"}
+    {"Dubai", "Asia/Dubai"},
+    {"Mumbai / Kolkata", "Asia/Kolkata"},
+    {"Bangkok", "Asia/Bangkok"},
+    {"Singapore", "Asia/Singapore"},
+    {"Beijing / Shanghai", "Asia/Shanghai"},
+    {"Tokyo", "Asia/Tokyo"},
+    {"Seoul", "Asia/Seoul"},
+    {"Sydney", "Australia/Sydney"},
+    {"Melbourne", "Australia/Melbourne"},
+    {"Perth", "Australia/Perth"},
+    {"Auckland", "Pacific/Auckland"}
   ]
 
   @impl true
@@ -75,6 +75,15 @@ defmodule CourierWeb.ScheduleLive.Index do
     |> assign(:form, blank_form())
   end
 
+  defp apply_action(socket, :edit, %{"id" => id}) do
+    schedule = Schedules.get_schedule!(id)
+
+    socket
+    |> assign(:page_title, "Edit Schedule")
+    |> assign(:schedule, schedule)
+    |> assign(:form, to_form(Schedule.changeset(schedule, %{})))
+  end
+
   defp apply_action(socket, :recipes, %{"id" => id}) do
     schedule = Schedules.get_schedule!(id)
     recipe_ids = Schedules.list_recipe_ids_for_schedule(id) |> MapSet.new()
@@ -93,11 +102,17 @@ defmodule CourierWeb.ScheduleLive.Index do
   end
 
   def handle_event("save", %{"schedule" => params}, socket) do
-    case Schedules.create_schedule(params) do
+    result =
+      case socket.assigns.live_action do
+        :edit -> Schedules.update_schedule(socket.assigns.schedule, params)
+        :new -> Schedules.create_schedule(params)
+      end
+
+    case result do
       {:ok, _schedule} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Schedule created")
+         |> put_flash(:info, if(socket.assigns.live_action == :edit, do: "Schedule updated", else: "Schedule created"))
          |> assign(:schedules, Schedules.list_schedules())
          |> push_patch(to: ~p"/schedule")}
 
@@ -109,7 +124,11 @@ defmodule CourierWeb.ScheduleLive.Index do
   def handle_event("toggle", %{"id" => id}, socket) do
     schedule = Schedules.get_schedule!(id)
     {:ok, _} = Schedules.update_schedule(schedule, %{enabled: !schedule.enabled})
-    {:noreply, assign(socket, :schedules, Schedules.list_schedules())}
+
+    {:noreply,
+     socket
+     |> assign(:schedules, Schedules.list_schedules())
+     |> put_flash(:info, "Saved")}
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
@@ -125,7 +144,10 @@ defmodule CourierWeb.ScheduleLive.Index do
     scheduled_recipe_ids =
       Schedules.toggle_recipe(schedule.id, recipe_id, socket.assigns.scheduled_recipe_ids)
 
-    {:noreply, assign(socket, :scheduled_recipe_ids, scheduled_recipe_ids)}
+    {:noreply,
+     socket
+     |> assign(:scheduled_recipe_ids, scheduled_recipe_ids)
+     |> put_flash(:info, "Saved")}
   end
 
   defp blank_form do

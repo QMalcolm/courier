@@ -62,6 +62,9 @@ config :logger, :console,
 config :courier, Courier.Scheduler,
   jobs: []
 
+# Configure tzdata as the time zone database so Quantum can resolve IANA timezone names
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
