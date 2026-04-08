@@ -1,9 +1,11 @@
 defmodule CourierWeb.RecipeLive.Index do
   use CourierWeb, :live_view
 
+  alias Courier.Devices
   alias Courier.Library
   alias Courier.Library.Recipe
   alias Courier.Schedules
+  alias Courier.Subscriptions
 
   @recipe_template """
   feeds:
@@ -48,12 +50,46 @@ defmodule CourierWeb.RecipeLive.Index do
     |> assign(:recipe, Library.get_recipe!(id))
   end
 
+  defp apply_action(socket, :subscriptions, %{"id" => id}) do
+    recipe = Library.get_recipe!(id)
+    subscriptions = Subscriptions.list_subscriptions_for_recipe(id)
+    subscribed_ids = MapSet.new(subscriptions, & &1.device_id)
+
+    socket
+    |> assign(:page_title, "Devices — #{recipe.name}")
+    |> assign(:recipe, recipe)
+    |> assign(:all_devices, Devices.list_devices())
+    |> assign(:subscribed_ids, subscribed_ids)
+  end
+
   @impl true
   def handle_info({CourierWeb.RecipeLive.FormComponent, {:saved, _recipe}}, socket) do
     {:noreply,
      socket
      |> assign(:recipes, Library.list_recipes())
      |> assign(:scheduled_recipe_ids, Schedules.list_scheduled_recipe_ids())}
+  end
+
+  @impl true
+  def handle_event("toggle_subscription", %{"device_id" => device_id}, socket) do
+    recipe = socket.assigns.recipe
+    device_id = String.to_integer(device_id)
+
+    subscribed_ids =
+      case Subscriptions.get_subscription_by_device_and_recipe(device_id, recipe.id) do
+        nil ->
+          {:ok, _} = Subscriptions.create_subscription(%{device_id: device_id, recipe_id: recipe.id})
+          MapSet.put(socket.assigns.subscribed_ids, device_id)
+
+        subscription ->
+          {:ok, _} = Subscriptions.delete_subscription(subscription)
+          MapSet.delete(socket.assigns.subscribed_ids, device_id)
+      end
+
+    {:noreply,
+     socket
+     |> assign(:subscribed_ids, subscribed_ids)
+     |> put_flash(:info, "Saved")}
   end
 
   @impl true

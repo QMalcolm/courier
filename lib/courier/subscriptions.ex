@@ -11,6 +11,14 @@ defmodule Courier.Subscriptions do
     )
   end
 
+  def list_subscriptions_for_recipe(recipe_id) do
+    Repo.all(
+      from s in Subscription,
+        where: s.recipe_id == ^recipe_id,
+        preload: [:device]
+    )
+  end
+
   def get_subscription_by_device_and_recipe(device_id, recipe_id) do
     Repo.one(
       from s in Subscription,

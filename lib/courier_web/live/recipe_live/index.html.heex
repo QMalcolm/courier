@@ -26,6 +26,9 @@
   <:col :let={recipe} label="Oldest article">{recipe.oldest_article}d</:col>
   <:col :let={recipe} label="Max articles">{recipe.max_articles}</:col>
   <:action :let={recipe}>
+    <.link patch={~p"/recipes/#{recipe}/subscriptions"}>Devices</.link>
+  </:action>
+  <:action :let={recipe}>
     <.link patch={~p"/recipes/#{recipe}/edit"}>Edit</.link>
   </:action>
   <:action :let={recipe}>
@@ -42,6 +45,41 @@
     </.link>
   </:action>
 </.table>
+
+<.modal
+  :if={@live_action == :subscriptions}
+  id="subscriptions-modal"
+  show
+  on_cancel={JS.patch(~p"/recipes")}
+>
+  <.header>
+    Devices — {@recipe.name}
+    <:subtitle>Check devices to deliver this recipe to.</:subtitle>
+  </.header>
+
+  <div class="mt-6 divide-y divide-zinc-100">
+    <label
+      :for={device <- @all_devices}
+      class="flex items-center gap-4 py-3 cursor-pointer hover:bg-zinc-50 -mx-4 px-4 rounded-lg"
+    >
+      <input
+        type="checkbox"
+        checked={MapSet.member?(@subscribed_ids, device.id)}
+        phx-click="toggle_subscription"
+        phx-value-device_id={device.id}
+        class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+      />
+      <div>
+        <div class="text-sm font-medium text-zinc-900">{device.name}</div>
+        <div class="text-xs text-zinc-500">{device.email}</div>
+      </div>
+    </label>
+
+    <p :if={@all_devices == []} class="py-4 text-sm text-zinc-500">
+      No devices yet. <.link patch={~p"/devices/new"} class="underline">Add one</.link>.
+    </p>
+  </div>
+</.modal>
 
 <.modal
   :if={@live_action in [:new, :edit]}
