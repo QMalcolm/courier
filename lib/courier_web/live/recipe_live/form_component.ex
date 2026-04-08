@@ -38,7 +38,7 @@ defmodule CourierWeb.RecipeLive.FormComponent do
           ><%= Phoenix.HTML.Form.normalize_value("textarea", @form[:source].value) %></textarea>
           <.error :for={msg <- Enum.map(@form[:source].errors, &translate_error(&1))}>{msg}</.error>
         </div>
-        <div :if={@feed_check_results != nil} class="rounded-lg border border-zinc-200 divide-y divide-zinc-100">
+        <div :if={is_list(@feed_check_results)} class="rounded-lg border border-zinc-200 divide-y divide-zinc-100">
           <div :if={@feed_check_results == []} class="px-3 py-2 text-sm text-zinc-500">
             No valid feeds found in source YAML.
           </div>
@@ -59,10 +59,16 @@ defmodule CourierWeb.RecipeLive.FormComponent do
             type="button"
             phx-click="check_feeds"
             phx-target={@myself}
-            phx-disable-with="Checking..."
-            class="rounded-lg bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 py-2 px-3 text-sm font-semibold leading-6"
+            disabled={@feed_check_results == :checking}
+            class={[
+              "rounded-lg border py-2 px-3 text-sm font-semibold leading-6",
+              if(@feed_check_results == :checking,
+                do: "bg-zinc-100 border-zinc-200 text-zinc-400 cursor-not-allowed",
+                else: "bg-white hover:bg-zinc-50 border-zinc-300 text-zinc-900"
+              )
+            ]}
           >
-            Check Feeds
+            {if @feed_check_results == :checking, do: "Checking...", else: "Check Feeds"}
           </button>
           <.button phx-disable-with="Saving...">Save Recipe</.button>
         </:actions>
@@ -93,12 +99,25 @@ defmodule CourierWeb.RecipeLive.FormComponent do
   end
 
   def handle_event("check_feeds", _params, socket) do
-    results = Library.check_feeds_detailed(socket.assigns.current_params)
-    {:noreply, assign(socket, feed_check_results: results)}
+    params = socket.assigns.current_params
+
+    {:noreply,
+     socket
+     |> assign(feed_check_results: :checking)
+     |> start_async(:check_feeds, fn -> Library.check_feeds_detailed(params) end)}
   end
 
   def handle_event("save", %{"recipe" => recipe_params}, socket) do
     save_recipe(socket, socket.assigns.action, recipe_params)
+  end
+
+  @impl true
+  def handle_async(:check_feeds, {:ok, results}, socket) do
+    {:noreply, assign(socket, feed_check_results: results)}
+  end
+
+  def handle_async(:check_feeds, {:exit, _reason}, socket) do
+    {:noreply, assign(socket, feed_check_results: [])}
   end
 
   defp save_recipe(socket, :edit, recipe_params) do
