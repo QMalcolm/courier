@@ -21,11 +21,11 @@ defmodule CourierWeb.FeedProxyController do
     end
   end
 
-  defp fetch_feed(url) do
+  defp fetch_feed(url, redirects_left \\ 5) do
     request = Finch.build(:get, url, [{"user-agent", "Courier/1.0"}])
 
     case Finch.request(request, Courier.Finch) do
-      {:ok, %{status: 200, body: body, headers: headers}} ->
+      {:ok, %{status: status, body: body, headers: headers}} when status in 200..299 ->
         content_type =
           case Enum.find(headers, fn {k, _} -> String.downcase(k) == "content-type" end) do
             {_, v} -> v
@@ -33,6 +33,12 @@ defmodule CourierWeb.FeedProxyController do
           end
 
         {:ok, body, content_type}
+
+      {:ok, %{status: status, headers: headers}} when status in [301, 302, 307, 308] and redirects_left > 0 ->
+        case List.keyfind(headers, "location", 0) do
+          {"location", location} -> fetch_feed(location, redirects_left - 1)
+          nil -> {:error, "redirect with no Location header"}
+        end
 
       {:ok, %{status: status}} ->
         {:error, "upstream returned #{status}"}

@@ -27,13 +27,24 @@ defmodule Courier.FeedParser do
     ])
   end
 
-  defp fetch_body(url) do
+  defp fetch_body(url, redirects_left \\ 5) do
     request = Finch.build(:get, url, [{"user-agent", "Courier/1.0"}])
 
     case Finch.request(request, Courier.Finch) do
-      {:ok, %{status: 200, body: body}} -> {:ok, body}
-      {:ok, %{status: status}} -> {:error, "upstream returned #{status}"}
-      {:error, reason} -> {:error, inspect(reason)}
+      {:ok, %{status: status, body: body}} when status in 200..299 ->
+        {:ok, body}
+
+      {:ok, %{status: status, headers: headers}} when status in [301, 302, 307, 308] and redirects_left > 0 ->
+        case List.keyfind(headers, "location", 0) do
+          {"location", location} -> fetch_body(location, redirects_left - 1)
+          nil -> {:error, "redirect with no Location header"}
+        end
+
+      {:ok, %{status: status}} ->
+        {:error, "upstream returned #{status}"}
+
+      {:error, reason} ->
+        {:error, inspect(reason)}
     end
   end
 
