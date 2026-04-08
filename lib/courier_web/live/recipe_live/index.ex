@@ -50,6 +50,17 @@ defmodule CourierWeb.RecipeLive.Index do
     |> assign(:recipe, Library.get_recipe!(id))
   end
 
+  defp apply_action(socket, :schedules, %{"id" => id}) do
+    recipe = Library.get_recipe!(id)
+    schedule_ids = Schedules.list_schedule_ids_for_recipe(id) |> MapSet.new()
+
+    socket
+    |> assign(:page_title, "Schedules — #{recipe.name}")
+    |> assign(:recipe, recipe)
+    |> assign(:all_schedules, Schedules.list_schedules())
+    |> assign(:schedule_ids, schedule_ids)
+  end
+
   defp apply_action(socket, :subscriptions, %{"id" => id}) do
     recipe = Library.get_recipe!(id)
     subscriptions = Subscriptions.list_subscriptions_for_recipe(id)
@@ -68,6 +79,20 @@ defmodule CourierWeb.RecipeLive.Index do
      socket
      |> assign(:recipes, Library.list_recipes())
      |> assign(:scheduled_recipe_ids, Schedules.list_scheduled_recipe_ids())}
+  end
+
+  @impl true
+  def handle_event("toggle_schedule", %{"schedule_id" => schedule_id}, socket) do
+    recipe = socket.assigns.recipe
+    schedule_id = String.to_integer(schedule_id)
+
+    schedule_ids = Schedules.toggle_recipe(schedule_id, recipe.id, socket.assigns.schedule_ids)
+
+    {:noreply,
+     socket
+     |> assign(:schedule_ids, schedule_ids)
+     |> assign(:scheduled_recipe_ids, Schedules.list_scheduled_recipe_ids())
+     |> put_flash(:info, "Saved")}
   end
 
   @impl true

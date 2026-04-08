@@ -26,6 +26,9 @@
   <:col :let={recipe} label="Oldest article">{recipe.oldest_article}d</:col>
   <:col :let={recipe} label="Max articles">{recipe.max_articles}</:col>
   <:action :let={recipe}>
+    <.link patch={~p"/recipes/#{recipe}/schedules"}>Schedules</.link>
+  </:action>
+  <:action :let={recipe}>
     <.link patch={~p"/recipes/#{recipe}/subscriptions"}>Devices</.link>
   </:action>
   <:action :let={recipe}>
@@ -45,6 +48,45 @@
     </.link>
   </:action>
 </.table>
+
+<.modal
+  :if={@live_action == :schedules}
+  id="schedules-modal"
+  show
+  on_cancel={JS.patch(~p"/recipes")}
+>
+  <.header>
+    Schedules — {@recipe.name}
+    <:subtitle>Check schedules to run this recipe on.</:subtitle>
+  </.header>
+
+  <div class="mt-6 divide-y divide-zinc-100">
+    <label
+      :for={schedule <- @all_schedules}
+      class="flex items-center gap-4 py-3 cursor-pointer hover:bg-zinc-50 -mx-4 px-4 rounded-lg"
+    >
+      <input
+        type="checkbox"
+        checked={MapSet.member?(@schedule_ids, schedule.id)}
+        phx-click="toggle_schedule"
+        phx-value-schedule_id={schedule.id}
+        class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+      />
+      <div>
+        <div class="text-sm font-medium text-zinc-900">
+          {schedule.label || CourierWeb.ScheduleLive.Index.format_time(schedule)}
+        </div>
+        <div class="text-xs text-zinc-500">
+          {CourierWeb.ScheduleLive.Index.format_days(schedule)}
+        </div>
+      </div>
+    </label>
+
+    <p :if={@all_schedules == []} class="py-4 text-sm text-zinc-500">
+      No schedules yet. <.link patch={~p"/schedule/new"} class="underline">Add one</.link>.
+    </p>
+  </div>
+</.modal>
 
 <.modal
   :if={@live_action == :subscriptions}

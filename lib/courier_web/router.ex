@@ -26,6 +26,7 @@ defmodule CourierWeb.Router do
     live "/recipes/new", RecipeLive.Index, :new
     live "/recipes/:id/edit", RecipeLive.Index, :edit
     live "/recipes/:id/subscriptions", RecipeLive.Index, :subscriptions
+    live "/recipes/:id/schedules", RecipeLive.Index, :schedules
 
     live "/devices", DeviceLive.Index, :index
     live "/devices/new", DeviceLive.Index, :new

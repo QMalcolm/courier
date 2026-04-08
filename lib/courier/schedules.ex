@@ -36,6 +36,15 @@ defmodule Courier.Schedules do
     Schedule.changeset(schedule, attrs)
   end
 
+  @doc "Returns all schedule IDs associated with the given recipe."
+  def list_schedule_ids_for_recipe(recipe_id) do
+    Repo.all(
+      from sr in ScheduleRecipe,
+        where: sr.recipe_id == ^recipe_id,
+        select: sr.schedule_id
+    )
+  end
+
   @doc "Returns all recipe IDs associated with the given schedule."
   def list_recipe_ids_for_schedule(schedule_id) do
     Repo.all(
