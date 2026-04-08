@@ -39,3 +39,6 @@ npm-debug.log
 *.db
 *.db-*
 
+# Local env file for docker compose
+.env
+
