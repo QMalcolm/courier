@@ -32,6 +32,9 @@
     <.link patch={~p"/schedule/#{s}/recipes"}>Recipes</.link>
   </:action>
   <:action :let={s}>
+    <.link patch={~p"/schedule/#{s}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={s}>
     <.link
       phx-click={JS.push("delete", value: %{id: s.id})}
       data-confirm="Delete this schedule?"
@@ -77,12 +80,12 @@
 </.modal>
 
 <.modal
-  :if={@live_action == :new}
+  :if={@live_action in [:new, :edit]}
   id="schedule-modal"
   show
   on_cancel={JS.patch(~p"/schedule")}
 >
-  <.header>New Schedule</.header>
+  <.header>{if @live_action == :edit, do: "Edit Schedule", else: "New Schedule"}</.header>
 
   <.simple_form
     for={@form}
@@ -119,7 +122,9 @@
     </div>
 
     <:actions>
-      <.button phx-disable-with="Saving...">Add Schedule</.button>
+      <.button phx-disable-with="Saving...">
+        {if @live_action == :edit, do: "Save Changes", else: "Add Schedule"}
+      </.button>
     </:actions>
   </.simple_form>
 </.modal>
