@@ -1,0 +1,91 @@
+<.header>
+  Ebooks
+  <:actions>
+    <.link patch={~p"/ebooks/new"}>
+      <.button>New Ebook</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="ebooks" rows={@ebooks}>
+  <:col :let={ebook} label="Title">
+    <.link navigate={~p"/ebooks/#{ebook}"} class="font-medium text-zinc-900 hover:text-zinc-600">
+      {ebook.title}
+    </.link>
+  </:col>
+  <:col :let={ebook} label="Status">
+    <span class={[
+      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+      status_class(ebook.status)
+    ]}>
+      {ebook.status}
+    </span>
+  </:col>
+  <:col :let={ebook} label="Articles">{length(ebook.articles)}</:col>
+  <:col :let={ebook} label="Created">
+    <span class="text-zinc-500 text-sm">
+      {Calendar.strftime(ebook.inserted_at, "%b %d %H:%M")}
+    </span>
+  </:col>
+  <:col :let={ebook} label="Duration">{duration(ebook)}</:col>
+  <:action :let={ebook}>
+    <.link navigate={~p"/ebooks/#{ebook}"}>View</.link>
+  </:action>
+  <:action :let={ebook}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: ebook.id})}
+      data-confirm="Delete this ebook?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action == :new}
+  id="new-ebook-modal"
+  show
+  on_cancel={JS.patch(~p"/ebooks")}
+>
+  <.header>
+    New Ebook
+    <:subtitle>Convert a list of article URLs into a single EPUB.</:subtitle>
+  </.header>
+
+  <form phx-submit="create" class="mt-6 space-y-5">
+    <.input
+      id="ebook-title"
+      name="title"
+      type="text"
+      label="Title"
+      value={@title}
+      required
+    />
+
+    <div>
+      <.label for="urls_text">Article URLs</.label>
+      <p class="mt-1 text-xs text-zinc-500">
+        One URL per line. Works best with plain HTML pages — paywalled and
+        JavaScript-heavy sites may not extract correctly.
+      </p>
+      <textarea
+        id="urls_text"
+        name="urls_text"
+        rows="10"
+        class="mt-2 block w-full rounded-lg border-zinc-300 text-zinc-900 focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6 font-mono"
+        placeholder={"https://example.com/article-one\nhttps://example.com/article-two"}
+      >{@urls_text}</textarea>
+    </div>
+
+    <ul :if={@errors != []} class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+      <li :for={error <- @errors} class="text-sm text-red-700">{error}</li>
+    </ul>
+
+    <div class="flex items-center gap-4 pt-1">
+      <.button type="submit" phx-disable-with="Creating…">Create Ebook</.button>
+      <.link patch={~p"/ebooks"} class="text-sm font-medium text-zinc-500 hover:text-zinc-700">
+        Cancel
+      </.link>
+    </div>
+  </form>
+</.modal>
