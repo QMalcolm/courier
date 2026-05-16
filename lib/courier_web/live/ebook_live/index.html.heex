@@ -65,8 +65,8 @@
     <div>
       <.label for="urls_text">Article URLs</.label>
       <p class="mt-1 text-xs text-zinc-500">
-        One URL per line. Works best with plain HTML pages — paywalled and
-        JavaScript-heavy sites may not extract correctly.
+        One URL per line. Each URL will be checked for reachability before the ebook is created.
+        Works best with plain HTML pages — paywalled and JavaScript-heavy sites may not extract correctly.
       </p>
       <textarea
         id="urls_text"
@@ -82,7 +82,7 @@
     </ul>
 
     <div class="flex items-center gap-4 pt-1">
-      <.button type="submit" phx-disable-with="Creating…">Create Ebook</.button>
+      <.button type="submit" phx-disable-with="Checking URLs…">Create Ebook</.button>
       <.link patch={~p"/ebooks"} class="text-sm font-medium text-zinc-500 hover:text-zinc-700">
         Cancel
       </.link>

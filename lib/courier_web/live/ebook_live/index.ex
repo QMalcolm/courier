@@ -3,6 +3,7 @@ defmodule CourierWeb.EbookLive.Index do
 
   alias Courier.Ebooks
   alias Courier.EbookRunner
+  alias Courier.UrlChecker
 
   @impl true
   def mount(_params, _session, socket) do
@@ -46,7 +47,8 @@ defmodule CourierWeb.EbookLive.Index do
     urls = parse_urls(urls_text)
     errors = validate_params(title, urls)
 
-    if errors == [] do
+    with [] <- errors,
+         [] <- reachability_errors(urls) do
       {:ok, ebook} = Ebooks.create_ebook_with_articles(title, urls)
       EbookRunner.create(ebook)
 
@@ -55,7 +57,8 @@ defmodule CourierWeb.EbookLive.Index do
        |> assign(:ebooks, Ebooks.list_ebooks())
        |> push_navigate(to: ~p"/ebooks/#{ebook}")}
     else
-      {:noreply, assign(socket, :errors, errors)}
+      errors ->
+        {:noreply, assign(socket, :errors, errors)}
     end
   end
 
@@ -80,6 +83,15 @@ defmodule CourierWeb.EbookLive.Index do
       | Enum.flat_map(urls, &url_error/1)
     ]
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp reachability_errors(urls) do
+    urls
+    |> UrlChecker.check_all()
+    |> Enum.flat_map(fn
+      {_url, :ok} -> []
+      {url, {:error, reason}} -> ["#{url}: #{reason}"]
+    end)
   end
 
   defp url_error(url) do
