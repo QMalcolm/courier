@@ -36,25 +36,29 @@ defmodule Courier.EbookRunner do
     broadcast({:ebook_updated, ebook})
 
     {status, log, archived} =
-      with_work_dir(fn work_dir ->
-        recipe_file = Path.join(work_dir, "ebook.recipe")
-        epub_file = Path.join(work_dir, "output.epub")
-        File.write!(recipe_file, to_python(ebook))
+      try do
+        with_work_dir(fn work_dir ->
+          recipe_file = Path.join(work_dir, "ebook.recipe")
+          epub_file = Path.join(work_dir, "output.epub")
+          File.write!(recipe_file, to_python(ebook))
 
-        case run_convert(recipe_file, epub_file) do
-          {:ok, convert_log} ->
-            if epub_has_articles?(epub_file) do
-              {archive_log, did_archive} = maybe_archive(epub_file)
-              {"success", convert_log <> archive_log, did_archive}
-            else
-              msg = "=== result ===\nNo article content could be extracted. URLs may be paywalled or require JavaScript rendering.\n"
-              {"failure", convert_log <> msg, false}
-            end
+          case run_convert(recipe_file, epub_file) do
+            {:ok, convert_log} ->
+              if epub_has_articles?(epub_file) do
+                {archive_log, did_archive} = maybe_archive(epub_file)
+                {"success", convert_log <> archive_log, did_archive}
+              else
+                msg = "=== result ===\nNo article content could be extracted. URLs may be paywalled or require JavaScript rendering.\n"
+                {"failure", convert_log <> msg, false}
+              end
 
-          {:error, convert_log} ->
-            {"failure", convert_log, false}
-        end
-      end)
+            {:error, convert_log} ->
+              {"failure", convert_log, false}
+          end
+        end)
+      rescue
+        e -> {"failure", "=== error ===\n#{Exception.message(e)}\n", false}
+      end
 
     {:ok, finished} =
       Ebooks.update_ebook(ebook, %{
@@ -80,19 +84,23 @@ defmodule Courier.EbookRunner do
     broadcast({:ebook_updated, Ebooks.get_ebook!(ebook.id)})
 
     {send_status, sent_at} =
-      with_work_dir(fn work_dir ->
-        recipe_file = Path.join(work_dir, "ebook.recipe")
-        epub_file = Path.join(work_dir, "output.epub")
-        File.write!(recipe_file, to_python(ebook))
+      try do
+        with_work_dir(fn work_dir ->
+          recipe_file = Path.join(work_dir, "ebook.recipe")
+          epub_file = Path.join(work_dir, "output.epub")
+          File.write!(recipe_file, to_python(ebook))
 
-        with {:ok, _} <- run_convert(recipe_file, epub_file),
-             true <- epub_has_articles?(epub_file),
-             {:ok, _} <- run_smtp(epub_file, ebook, device) do
-          {"success", DateTime.utc_now()}
-        else
-          _ -> {"failure", nil}
-        end
-      end)
+          with {:ok, _} <- run_convert(recipe_file, epub_file),
+               true <- epub_has_articles?(epub_file),
+               {:ok, _} <- run_smtp(epub_file, ebook, device) do
+            {"success", DateTime.utc_now()}
+          else
+            _ -> {"failure", nil}
+          end
+        end)
+      rescue
+        _ -> {"failure", nil}
+      end
 
     {:ok, _} = Ebooks.update_send(send, %{status: send_status, sent_at: sent_at})
 
@@ -234,8 +242,6 @@ defmodule Courier.EbookRunner do
 
     try do
       fun.(work_dir)
-    rescue
-      e -> {"failure", "=== error ===\n#{Exception.message(e)}\n", false}
     after
       File.rm_rf!(work_dir)
     end
