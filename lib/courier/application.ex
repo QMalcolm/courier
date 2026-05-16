@@ -28,7 +28,9 @@ defmodule Courier.Application do
       # Restore persisted schedules into Quantum after everything else is up
       Supervisor.child_spec({Task, fn -> Courier.Schedules.sync_quantum() end}, id: :sync_quantum),
       # Mark any runs left in "running" state from a previous crash as failed
-      Supervisor.child_spec({Task, fn -> Courier.Runs.mark_stale_runs_as_failed() end}, id: :mark_stale_runs)
+      Supervisor.child_spec({Task, fn -> Courier.Runs.mark_stale_runs_as_failed() end}, id: :mark_stale_runs),
+      # Same recovery for ebook creation tasks interrupted mid-flight
+      Supervisor.child_spec({Task, fn -> Courier.Ebooks.mark_stale_ebooks_as_failed() end}, id: :mark_stale_ebooks)
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
