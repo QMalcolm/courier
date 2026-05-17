@@ -32,7 +32,14 @@ defmodule Courier.EbookRunner do
     ebook = Ebooks.get_ebook!(ebook_id)
     Logger.info("[EbookRunner] Starting creation: ebook=#{ebook.id}")
 
-    {:ok, ebook} = Ebooks.update_ebook(ebook, %{status: "running", started_at: DateTime.utc_now()})
+    {:ok, ebook} =
+      Ebooks.update_ebook(ebook, %{
+        status: "running",
+        started_at: DateTime.utc_now(),
+        finished_at: nil,
+        log_output: nil,
+        archived: false
+      })
     broadcast({:ebook_updated, ebook})
 
     {status, log, archived} =
