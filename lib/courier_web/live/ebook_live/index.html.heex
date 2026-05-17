@@ -77,6 +77,15 @@
       >{@urls_text}</textarea>
     </div>
 
+    <div :if={@pdf_urls != []} class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 space-y-1">
+      <p class="text-sm font-medium text-amber-800">
+        {length(@pdf_urls)} PDF {if length(@pdf_urls) == 1, do: "URL", else: "URLs"} detected — will be converted via Calibre before inclusion (quality varies by PDF)
+      </p>
+      <ul class="mt-1 space-y-0.5">
+        <li :for={url <- @pdf_urls} class="text-xs text-amber-700 font-mono break-all">{url}</li>
+      </ul>
+    </div>
+
     <ul :if={@errors != []} class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 space-y-1">
       <li :for={error <- @errors} class="text-sm text-red-700">{error}</li>
     </ul>
