@@ -179,16 +179,34 @@ defmodule Courier.EbookRunner do
 
   defp convert_pdf(article, work_dir) do
     pdf_path = Path.join(work_dir, "article_#{article.position}.pdf")
+    txt_path = Path.join(work_dir, "article_#{article.position}.txt")
     html_path = Path.join(work_dir, "article_#{article.position}.html")
     header = "=== pdf #{article.url} ===\n"
 
     with :ok <- download_file(article.url, pdf_path),
          {:ok, convert_log} <-
-           cmd(calibre_bin("ebook-convert"), [pdf_path, html_path], "pdf-to-html") do
+           cmd(calibre_bin("ebook-convert"), [pdf_path, txt_path], "pdf-to-txt") do
+      File.write!(html_path, text_to_html(File.read!(txt_path)))
       {:ok, html_path, header <> convert_log}
     else
       {:error, reason} -> {:error, header <> "Failed: #{reason}\n"}
     end
+  end
+
+  defp text_to_html(text) do
+    escaped =
+      text
+      |> String.replace("&", "&amp;")
+      |> String.replace("<", "&lt;")
+      |> String.replace(">", "&gt;")
+
+    """
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"/></head>
+    <body><pre style="white-space: pre-wrap; font-family: serif; font-size: 1em;">#{escaped}</pre></body>
+    </html>
+    """
   end
 
   defp download_file(url, path) do
