@@ -13,10 +13,11 @@ defmodule Courier.UrlChecker do
   @max_redirects 5
 
   @doc """
-  Checks all URLs concurrently. Returns a list of `{url, :ok}` or
-  `{url, {:error, reason}}` tuples in the same order as the input.
+  Checks all URLs concurrently. Returns a list of `{url, result}` tuples
+  in the same order as the input, where result is `:html`, `:pdf`, or
+  `{:error, reason}`.
   """
-  @spec check_all([String.t()]) :: [{String.t(), :ok | {:error, String.t()}}]
+  @spec check_all([String.t()]) :: [{String.t(), :html | :pdf | {:error, String.t()}}]
   def check_all(urls) do
     stream =
       Task.async_stream(
@@ -30,15 +31,14 @@ defmodule Courier.UrlChecker do
     urls
     |> Enum.zip(stream)
     |> Enum.map(fn
-      {url, {:ok, :ok}} -> {url, :ok}
-      {url, {:ok, {:error, reason}}} -> {url, {:error, reason}}
+      {url, {:ok, result}} -> {url, result}
       {url, {:exit, :timeout}} -> {url, {:error, "timed out"}}
       {url, {:exit, reason}} -> {url, {:error, inspect(reason)}}
     end)
   end
 
-  @doc "Checks a single URL. Returns `:ok` or `{:error, reason}`."
-  @spec check(String.t()) :: :ok | {:error, String.t()}
+  @doc "Checks a single URL. Returns `:html`, `:pdf`, or `{:error, reason}`."
+  @spec check(String.t()) :: :html | :pdf | {:error, String.t()}
   def check(url), do: request(url, :head, @max_redirects)
 
   defp request(_url, _method, 0), do: {:error, "too many redirects"}
@@ -59,8 +59,8 @@ defmodule Courier.UrlChecker do
       {:ok, %{status: 405}} when method == :head ->
         request(url, :get, redirects_left)
 
-      {:ok, %{status: status}} ->
-        status_result(status)
+      {:ok, %{status: status, headers: headers}} ->
+        status_result(status, headers)
 
       {:error, reason} ->
         {:error, error_message(reason)}
@@ -69,15 +69,24 @@ defmodule Courier.UrlChecker do
     ArgumentError -> {:error, "invalid URL"}
   end
 
-  defp status_result(s) when s in 200..299, do: :ok
-  defp status_result(401), do: {:error, "requires authentication (HTTP 401)"}
-  defp status_result(403), do: {:error, "access forbidden (HTTP 403)"}
-  defp status_result(404), do: {:error, "not found (HTTP 404)"}
-  defp status_result(410), do: {:error, "page removed (HTTP 410)"}
-  defp status_result(429), do: {:error, "rate limited (HTTP 429)"}
-  defp status_result(s) when s in 400..499, do: {:error, "HTTP #{s}"}
-  defp status_result(s) when s in 500..599, do: {:error, "server error (HTTP #{s})"}
-  defp status_result(s), do: {:error, "unexpected status (HTTP #{s})"}
+  defp status_result(s, headers) when s in 200..299 do
+    content_type =
+      case List.keyfind(headers, "content-type", 0) do
+        {"content-type", ct} -> ct
+        nil -> ""
+      end
+
+    if String.contains?(content_type, "application/pdf"), do: :pdf, else: :html
+  end
+
+  defp status_result(401, _), do: {:error, "requires authentication (HTTP 401)"}
+  defp status_result(403, _), do: {:error, "access forbidden (HTTP 403)"}
+  defp status_result(404, _), do: {:error, "not found (HTTP 404)"}
+  defp status_result(410, _), do: {:error, "page removed (HTTP 410)"}
+  defp status_result(429, _), do: {:error, "rate limited (HTTP 429)"}
+  defp status_result(s, _) when s in 400..499, do: {:error, "HTTP #{s}"}
+  defp status_result(s, _) when s in 500..599, do: {:error, "server error (HTTP #{s})"}
+  defp status_result(s, _), do: {:error, "unexpected status (HTTP #{s})"}
 
   defp error_message(%{reason: :nxdomain}), do: "domain not found"
   defp error_message(%{reason: :econnrefused}), do: "connection refused"

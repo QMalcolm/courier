@@ -15,6 +15,7 @@ defmodule CourierWeb.EbookLive.Index do
      socket
      |> assign(:ebooks, Ebooks.list_ebooks())
      |> assign(:errors, [])
+     |> assign(:pdf_urls, [])
      |> assign(:title, "")
      |> assign(:urls_text, "")}
   end
@@ -34,6 +35,7 @@ defmodule CourierWeb.EbookLive.Index do
     |> assign(:title, "")
     |> assign(:urls_text, "")
     |> assign(:errors, [])
+    |> assign(:pdf_urls, [])
   end
 
   @impl true
@@ -47,18 +49,23 @@ defmodule CourierWeb.EbookLive.Index do
     urls = parse_urls(urls_text)
     errors = validate_params(title, urls)
 
-    with [] <- errors,
-         [] <- reachability_errors(urls) do
-      {:ok, ebook} = Ebooks.create_ebook_with_articles(title, urls)
-      EbookRunner.create(ebook)
+    {reach_errors, pdf_urls} = reachability_check(urls)
 
-      {:noreply,
-       socket
-       |> assign(:ebooks, Ebooks.list_ebooks())
-       |> push_navigate(to: ~p"/ebooks/#{ebook}")}
-    else
-      errors ->
-        {:noreply, assign(socket, :errors, errors)}
+    cond do
+      errors != [] ->
+        {:noreply, assign(socket, errors: errors, pdf_urls: [])}
+
+      reach_errors != [] ->
+        {:noreply, assign(socket, errors: reach_errors, pdf_urls: pdf_urls)}
+
+      true ->
+        {:ok, ebook} = Ebooks.create_ebook_with_articles(title, urls)
+        EbookRunner.create(ebook)
+
+        {:noreply,
+         socket
+         |> assign(:ebooks, Ebooks.list_ebooks())
+         |> push_navigate(to: ~p"/ebooks/#{ebook}")}
     end
   end
 
@@ -85,13 +92,11 @@ defmodule CourierWeb.EbookLive.Index do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp reachability_errors(urls) do
-    urls
-    |> UrlChecker.check_all()
-    |> Enum.flat_map(fn
-      {_url, :ok} -> []
-      {url, {:error, reason}} -> ["#{url}: #{reason}"]
-    end)
+  defp reachability_check(urls) do
+    results = UrlChecker.check_all(urls)
+    errors = for {url, {:error, reason}} <- results, do: "#{url}: #{reason}"
+    pdf_urls = for {url, :pdf} <- results, do: url
+    {errors, pdf_urls}
   end
 
   defp url_error(url) do

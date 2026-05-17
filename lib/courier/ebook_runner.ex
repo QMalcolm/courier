@@ -36,25 +36,30 @@ defmodule Courier.EbookRunner do
     broadcast({:ebook_updated, ebook})
 
     {status, log, archived} =
-      with_work_dir(fn work_dir ->
-        recipe_file = Path.join(work_dir, "ebook.recipe")
-        epub_file = Path.join(work_dir, "output.epub")
-        File.write!(recipe_file, to_python(ebook))
+      try do
+        with_work_dir(fn work_dir ->
+          recipe_file = Path.join(work_dir, "ebook.recipe")
+          epub_file = Path.join(work_dir, "output.epub")
+          {prepared_articles, pdf_log} = prepare_articles(ebook.articles, work_dir)
+          File.write!(recipe_file, to_python(ebook.title, prepared_articles))
 
-        case run_convert(recipe_file, epub_file) do
-          {:ok, convert_log} ->
-            if epub_has_articles?(epub_file) do
-              {archive_log, did_archive} = maybe_archive(epub_file)
-              {"success", convert_log <> archive_log, did_archive}
-            else
-              msg = "=== result ===\nNo article content could be extracted. URLs may be paywalled or require JavaScript rendering.\n"
-              {"failure", convert_log <> msg, false}
-            end
+          case run_convert(recipe_file, epub_file) do
+            {:ok, convert_log} ->
+              if epub_has_articles?(epub_file) do
+                {archive_log, did_archive} = maybe_archive(epub_file)
+                {"success", pdf_log <> convert_log <> archive_log, did_archive}
+              else
+                msg = "=== result ===\nNo article content could be extracted. URLs may be paywalled or require JavaScript rendering.\n"
+                {"failure", pdf_log <> convert_log <> msg, false}
+              end
 
-          {:error, convert_log} ->
-            {"failure", convert_log, false}
-        end
-      end)
+            {:error, convert_log} ->
+              {"failure", pdf_log <> convert_log, false}
+          end
+        end)
+      rescue
+        e -> {"failure", "=== error ===\n#{Exception.message(e)}\n", false}
+      end
 
     {:ok, finished} =
       Ebooks.update_ebook(ebook, %{
@@ -80,19 +85,24 @@ defmodule Courier.EbookRunner do
     broadcast({:ebook_updated, Ebooks.get_ebook!(ebook.id)})
 
     {send_status, sent_at} =
-      with_work_dir(fn work_dir ->
-        recipe_file = Path.join(work_dir, "ebook.recipe")
-        epub_file = Path.join(work_dir, "output.epub")
-        File.write!(recipe_file, to_python(ebook))
+      try do
+        with_work_dir(fn work_dir ->
+          recipe_file = Path.join(work_dir, "ebook.recipe")
+          epub_file = Path.join(work_dir, "output.epub")
+          {prepared_articles, _pdf_log} = prepare_articles(ebook.articles, work_dir)
+          File.write!(recipe_file, to_python(ebook.title, prepared_articles))
 
-        with {:ok, _} <- run_convert(recipe_file, epub_file),
-             true <- epub_has_articles?(epub_file),
-             {:ok, _} <- run_smtp(epub_file, ebook, device) do
-          {"success", DateTime.utc_now()}
-        else
-          _ -> {"failure", nil}
-        end
-      end)
+          with {:ok, _} <- run_convert(recipe_file, epub_file),
+               true <- epub_has_articles?(epub_file),
+               {:ok, _} <- run_smtp(epub_file, ebook, device) do
+            {"success", DateTime.utc_now()}
+          else
+            _ -> {"failure", nil}
+          end
+        end)
+      rescue
+        _ -> {"failure", nil}
+      end
 
     {:ok, _} = Ebooks.update_send(send, %{status: send_status, sent_at: sent_at})
 
@@ -102,9 +112,9 @@ defmodule Courier.EbookRunner do
 
   # --- Python recipe generation ---
 
-  defp to_python(%Ebook{} = ebook) do
+  defp to_python(title, articles) do
     articles_lines =
-      ebook.articles
+      articles
       |> Enum.map_join("\n", fn article ->
         "            {'title': '#{esc_py(article.title || "")}', 'url': '#{esc_py(article.url)}'},"
       end)
@@ -114,7 +124,7 @@ defmodule Courier.EbookRunner do
 
 
     class CourierEbook(BasicNewsRecipe):
-        title             = '#{esc_py(ebook.title)}'
+        title             = '#{esc_py(title)}'
         no_stylesheets    = True
         remove_javascript = True
 
@@ -123,6 +133,78 @@ defmodule Courier.EbookRunner do
     #{articles_lines}
             ])]
     """
+  end
+
+  # --- PDF preparation ---
+
+  # Checks each article URL. PDFs are downloaded and converted to HTML via
+  # Calibre, then referenced as file:// URLs so parse_index can include them.
+  # Falls back to the original URL on any failure; Calibre will handle it
+  # (likely producing an empty article) rather than aborting the whole ebook.
+  defp prepare_articles(articles, work_dir) do
+    {prepared, logs} =
+      articles
+      |> Enum.map(fn article ->
+        if pdf_url?(article.url) do
+          case convert_pdf(article, work_dir) do
+            {:ok, html_path, log} -> {%{article | url: "file://#{html_path}"}, log}
+            {:error, log} -> {article, log}
+          end
+        else
+          {article, ""}
+        end
+      end)
+      |> Enum.unzip()
+
+    combined_log = logs |> Enum.reject(&(&1 == "")) |> Enum.join()
+    {prepared, combined_log}
+  end
+
+  defp pdf_url?(url) do
+    req = Finch.build(:head, url, [{"user-agent", "Courier/1.0"}])
+
+    case Finch.request(req, Courier.Finch, receive_timeout: 8_000) do
+      {:ok, %{status: status, headers: headers}} when status in 200..299 ->
+        case List.keyfind(headers, "content-type", 0) do
+          {"content-type", ct} -> String.contains?(ct, "application/pdf")
+          nil -> false
+        end
+
+      _ ->
+        false
+    end
+  rescue
+    _ -> false
+  end
+
+  defp convert_pdf(article, work_dir) do
+    pdf_path = Path.join(work_dir, "article_#{article.position}.pdf")
+    html_path = Path.join(work_dir, "article_#{article.position}.html")
+    header = "=== pdf #{article.url} ===\n"
+
+    with :ok <- download_file(article.url, pdf_path),
+         {:ok, convert_log} <-
+           cmd(calibre_bin("ebook-convert"), [pdf_path, html_path], "pdf-to-html") do
+      {:ok, html_path, header <> convert_log}
+    else
+      {:error, reason} -> {:error, header <> "Failed: #{reason}\n"}
+    end
+  end
+
+  defp download_file(url, path) do
+    req = Finch.build(:get, url, [{"user-agent", "Courier/1.0"}])
+
+    case Finch.request(req, Courier.Finch, receive_timeout: 60_000) do
+      {:ok, %{status: status, body: body}} when status in 200..299 ->
+        File.write!(path, body)
+        :ok
+
+      {:ok, %{status: status}} ->
+        {:error, "HTTP #{status}"}
+
+      {:error, e} ->
+        {:error, Exception.message(e)}
+    end
   end
 
   # Escapes a string for safe embedding in a Python single-quoted string literal.
@@ -234,8 +316,6 @@ defmodule Courier.EbookRunner do
 
     try do
       fun.(work_dir)
-    rescue
-      e -> {"failure", "=== error ===\n#{Exception.message(e)}\n", false}
     after
       File.rm_rf!(work_dir)
     end
