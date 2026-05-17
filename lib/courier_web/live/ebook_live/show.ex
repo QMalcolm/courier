@@ -33,6 +33,12 @@ defmodule CourierWeb.EbookLive.Show do
   def handle_info({:ebook_updated, _}, socket), do: {:noreply, socket}
 
   @impl true
+  def handle_event("retry", _params, socket) do
+    EbookRunner.create(socket.assigns.ebook)
+    {:noreply, put_flash(socket, :info, "Retrying ebook creation…")}
+  end
+
+  @impl true
   def handle_event("send_to_device", %{"device_id" => device_id}, socket) do
     device = Devices.get_device!(String.to_integer(device_id))
     EbookRunner.send_to_device(socket.assigns.ebook, device)

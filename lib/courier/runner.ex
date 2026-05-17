@@ -185,7 +185,7 @@ defmodule Courier.Runner do
   end
 
   defp run_convert(recipe_file, epub_file, _recipe) do
-    cmd(calibre_bin("ebook-convert"), [recipe_file, epub_file], "ebook-convert")
+    cmd(calibre_bin("ebook-convert"), [recipe_file, epub_file, "--flow-size", "0"], "ebook-convert")
   end
 
   defp maybe_archive(epub_file) do
