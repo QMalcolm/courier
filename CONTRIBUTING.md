@@ -47,13 +47,20 @@ mix compile --warnings-as-errors  # also enforced in CI
 
 ## Pre-commit hook
 
-The repo ships a CodeScene quality gate in `.githooks/pre-commit`. To enable it:
+The repo ships a pre-commit hook in `.githooks/pre-commit`. To enable it:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-It only runs if the `cs` CLI is installed and `CS_ACCESS_TOKEN` is set, so it's a no-op otherwise.
+The hook runs four checks on every commit:
+
+| Check | Command | Notes |
+|---|---|---|
+| Code style | `mix format --check-formatted` | Run `mix format` to auto-fix |
+| Dependency audit | `mix hex.audit` | Flags retired or vulnerable packages |
+| Compile warnings | `mix compile --warnings-as-errors` | Same flag CI uses |
+| Code health | `cs delta --git-hook --staged` | Only runs if the `cs` CLI is installed and `CS_ACCESS_TOKEN` is set |
 
 ## Opening a PR
 
