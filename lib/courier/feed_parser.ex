@@ -74,13 +74,8 @@ defmodule Courier.FeedParser do
     end)
   end
 
-  # Resolves a redirect Location against the original URL.
-  # Handles absolute URLs (returned as-is) and relative paths.
-  defp resolve_url(_base, location) when binary_part(location, 0, 4) == "http", do: location
-
   defp resolve_url(base, location) do
-    uri = URI.parse(base)
-    "#{uri.scheme}://#{uri.host}#{location}"
+    URI.merge(URI.parse(base), URI.parse(location)) |> URI.to_string()
   end
 
   defp regex_first(_text, []), do: nil

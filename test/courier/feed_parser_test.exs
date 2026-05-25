@@ -105,14 +105,19 @@ defmodule Courier.FeedParserTest do
       assert "https://example.com/atom/2" in atom_guids
     end
 
-    test "follows redirects", %{bypass: bypass} do
+    test "follows absolute and relative redirects", %{bypass: bypass} do
       port = bypass.port
 
       Bypass.expect(bypass, fn conn ->
         case conn.request_path do
-          "/redirect" ->
+          "/abs-redir" ->
             conn
             |> Plug.Conn.put_resp_header("location", "http://localhost:#{port}/rss")
+            |> Plug.Conn.send_resp(301, "")
+
+          "/rel-redir" ->
+            conn
+            |> Plug.Conn.put_resp_header("location", "/rss")
             |> Plug.Conn.send_resp(301, "")
 
           "/rss" ->
@@ -122,8 +127,11 @@ defmodule Courier.FeedParserTest do
         end
       end)
 
-      assert {:ok, guids} = FeedParser.fetch_guids("http://localhost:#{bypass.port}/redirect")
-      assert length(guids) > 0
+      assert {:ok, abs_guids} = FeedParser.fetch_guids("http://localhost:#{port}/abs-redir")
+      assert length(abs_guids) > 0
+
+      assert {:ok, rel_guids} = FeedParser.fetch_guids("http://localhost:#{port}/rel-redir")
+      assert length(rel_guids) > 0
     end
 
     test "returns error for non-200 status", %{bypass: bypass} do
@@ -178,17 +186,5 @@ defmodule Courier.FeedParserTest do
       assert {:ok, []} = FeedParser.fetch_guids("http://localhost:#{bypass.port}/no-guid")
     end
 
-    test "follows relative redirect (port drops due to resolve_url behavior)", %{bypass: bypass} do
-      Bypass.expect_once(bypass, "GET", "/relative-redir", fn conn ->
-        conn
-        |> Plug.Conn.put_resp_header("location", "/destination")
-        |> Plug.Conn.send_resp(301, "")
-      end)
-
-      # resolve_url/2 is exercised even though the follow-up connection fails
-      # (relative URL drops port number)
-      assert {:error, _} =
-               FeedParser.fetch_guids("http://localhost:#{bypass.port}/relative-redir")
-    end
   end
 end

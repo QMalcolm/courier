@@ -146,16 +146,22 @@ defmodule Courier.UrlCheckerTest do
       assert :html = UrlChecker.check("http://localhost:#{bypass.port}/page")
     end
 
-    test "exercises resolve_url fallback for relative redirect location", %{bypass: bypass} do
-      Bypass.expect_once(bypass, fn conn ->
-        conn
-        |> Plug.Conn.put_resp_header("location", "/relative-dest")
-        |> Plug.Conn.send_resp(301, "")
+    test "follows relative redirect preserving host and port", %{bypass: bypass} do
+      Bypass.expect(bypass, fn conn ->
+        case conn.request_path do
+          "/page" ->
+            conn
+            |> Plug.Conn.put_resp_header("location", "/relative-dest")
+            |> Plug.Conn.send_resp(301, "")
+
+          "/relative-dest" ->
+            conn
+            |> Plug.Conn.put_resp_header("content-type", "text/html")
+            |> Plug.Conn.send_resp(200, "")
+        end
       end)
 
-      # resolve_url/2 is called for the relative path but drops the port,
-      # so the follow-up connection fails
-      assert {:error, _} = UrlChecker.check("http://localhost:#{bypass.port}/page")
+      assert :html = UrlChecker.check("http://localhost:#{bypass.port}/page")
     end
 
     test "returns error for domain that does not resolve", _context do

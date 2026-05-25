@@ -93,10 +93,7 @@ defmodule Courier.UrlChecker do
   defp error_message(%{reason: :timeout}), do: "timed out"
   defp error_message(reason), do: inspect(reason)
 
-  defp resolve_url(_base, "http" <> _ = location), do: location
-
   defp resolve_url(base, location) do
-    uri = URI.parse(base)
-    "#{uri.scheme}://#{uri.host}#{location}"
+    URI.merge(URI.parse(base), URI.parse(location)) |> URI.to_string()
   end
 end
