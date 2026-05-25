@@ -1,0 +1,4 @@
+#!/bin/sh
+if command -v cs > /dev/null 2>&1 && [ -n "$CS_ACCESS_TOKEN" ]; then
+    cs delta --git-hook --staged
+fi
