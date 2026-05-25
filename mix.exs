@@ -9,7 +9,18 @@ defmodule Courier.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [
+        summary: [threshold: 90],
+        ignore_modules: [
+          Courier.Release,
+          Courier.Repo,
+          Courier.Runner,
+          Courier.EbookRunner,
+          CourierWeb.Layouts,
+          CourierWeb.ErrorHTML
+        ]
+      ]
     ]
   end
 
@@ -60,7 +71,9 @@ defmodule Courier.MixProject do
       {:bandit, "~> 1.5"},
       {:quantum, "~> 3.0"},
       {:tzdata, "~> 1.1"},
-      {:yaml_elixir, "~> 2.9"}
+      {:yaml_elixir, "~> 2.9"},
+      {:bypass, "~> 2.1", only: :test},
+      {:lazy_html, ">= 0.1.0", only: :test}
     ]
   end
 
