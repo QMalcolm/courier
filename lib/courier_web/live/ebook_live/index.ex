@@ -71,7 +71,7 @@ defmodule CourierWeb.EbookLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    ebook = Ebooks.get_ebook!(String.to_integer(id))
+    ebook = Ebooks.get_ebook!(id)
     {:ok, _} = Ebooks.delete_ebook(ebook)
     {:noreply, assign(socket, :ebooks, Ebooks.list_ebooks())}
   end
