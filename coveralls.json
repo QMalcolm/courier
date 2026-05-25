@@ -1,0 +1,13 @@
+{
+  "coverage_options": {
+    "minimum_coverage": 90
+  },
+  "skip_files": [
+    "lib/courier/release.ex",
+    "lib/courier/repo.ex",
+    "lib/courier/runner.ex",
+    "lib/courier/ebook_runner.ex",
+    "lib/courier_web/components/layouts.ex",
+    "lib/courier_web/controllers/error_html.ex"
+  ]
+}

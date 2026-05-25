@@ -10,16 +10,13 @@ defmodule Courier.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [
-        summary: [threshold: 90],
-        ignore_modules: [
-          Courier.Release,
-          Courier.Repo,
-          Courier.Runner,
-          Courier.EbookRunner,
-          CourierWeb.Layouts,
-          CourierWeb.ErrorHTML
-        ]
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test
       ]
     ]
   end
@@ -73,6 +70,7 @@ defmodule Courier.MixProject do
       {:tzdata, "~> 1.1"},
       {:yaml_elixir, "~> 2.9"},
       {:bypass, "~> 2.1", only: :test},
+      {:excoveralls, "~> 0.18", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test}
     ]
   end

@@ -1,5 +1,9 @@
 # Courier
 
+[![CI](https://github.com/QMalcolm/courier/actions/workflows/test.yml/badge.svg)](https://github.com/QMalcolm/courier/actions/workflows/test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/QMalcolm/courier/badge.svg?branch=main)](https://coveralls.io/github/QMalcolm/courier?branch=main)
+[![CodeScene Average Code Health](https://codescene.io/projects/80480/status-badges/average-code-health)](https://codescene.io/projects/80480)
+
 A self-hosted Phoenix LiveView application that manages [Calibre](https://calibre-ebook.com/) news recipes and delivers epubs to e-readers via email on a schedule.
 
 **Features:**
@@ -8,6 +12,7 @@ A self-hosted Phoenix LiveView application that manages [Calibre](https://calibr
 - Subscribe devices to recipes
 - Schedule deliveries by time of day and day of week
 - Delivery log with per-run status and output
+- Create one-off ebooks from a list of URLs and send them to any registered device
 
 Ships as a single Docker image with Calibre bundled.
 
