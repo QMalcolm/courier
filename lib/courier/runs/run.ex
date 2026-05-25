@@ -20,7 +20,15 @@ defmodule Courier.Runs.Run do
   @doc false
   def changeset(run, attrs) do
     run
-    |> cast(attrs, [:started_at, :finished_at, :status, :log_output, :article_count, :recipe_id, :device_id])
+    |> cast(attrs, [
+      :started_at,
+      :finished_at,
+      :status,
+      :log_output,
+      :article_count,
+      :recipe_id,
+      :device_id
+    ])
     |> validate_required([:recipe_id, :device_id, :status])
     |> validate_inclusion(:status, @statuses)
   end

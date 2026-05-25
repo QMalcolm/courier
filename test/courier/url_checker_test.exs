@@ -32,7 +32,9 @@ defmodule Courier.UrlCheckerTest do
     test "falls back to GET when HEAD returns 405", %{bypass: bypass} do
       Bypass.expect(bypass, fn conn ->
         case conn.method do
-          "HEAD" -> Plug.Conn.send_resp(conn, 405, "")
+          "HEAD" ->
+            Plug.Conn.send_resp(conn, 405, "")
+
           "GET" ->
             conn
             |> Plug.Conn.put_resp_header("content-type", "text/html")
@@ -126,7 +128,8 @@ defmodule Courier.UrlCheckerTest do
         |> Plug.Conn.send_resp(301, "")
       end)
 
-      assert {:error, "too many redirects"} = UrlChecker.check("http://localhost:#{bypass.port}/loop")
+      assert {:error, "too many redirects"} =
+               UrlChecker.check("http://localhost:#{bypass.port}/loop")
     end
 
     test "returns error for redirect with no Location header", %{bypass: bypass} do

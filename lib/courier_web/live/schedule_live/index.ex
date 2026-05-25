@@ -5,8 +5,15 @@ defmodule CourierWeb.ScheduleLive.Index do
   alias Courier.Schedules
   alias Courier.Schedules.Schedule
 
-  @days [{"Mon", "mon"}, {"Tue", "tue"}, {"Wed", "wed"}, {"Thu", "thu"},
-         {"Fri", "fri"}, {"Sat", "sat"}, {"Sun", "sun"}]
+  @days [
+    {"Mon", "mon"},
+    {"Tue", "tue"},
+    {"Wed", "wed"},
+    {"Thu", "thu"},
+    {"Fri", "fri"},
+    {"Sat", "sat"},
+    {"Sun", "sun"}
+  ]
 
   @timezones [
     {"UTC", "UTC"},
@@ -112,7 +119,13 @@ defmodule CourierWeb.ScheduleLive.Index do
       {:ok, _schedule} ->
         {:noreply,
          socket
-         |> put_flash(:info, if(socket.assigns.live_action == :edit, do: "Schedule updated", else: "Schedule created"))
+         |> put_flash(
+           :info,
+           if(socket.assigns.live_action == :edit,
+             do: "Schedule updated",
+             else: "Schedule created"
+           )
+         )
          |> assign(:schedules, Schedules.list_schedules())
          |> push_patch(to: ~p"/schedule")}
 
@@ -151,7 +164,12 @@ defmodule CourierWeb.ScheduleLive.Index do
   end
 
   defp blank_form do
-    to_form(Schedule.changeset(%Schedule{hour: 7, minute: 0, days: "mon,tue,wed,thu,fri", timezone: "UTC"}, %{}))
+    to_form(
+      Schedule.changeset(
+        %Schedule{hour: 7, minute: 0, days: "mon,tue,wed,thu,fri", timezone: "UTC"},
+        %{}
+      )
+    )
   end
 
   def day_checked?(form_or_schedule, day) do

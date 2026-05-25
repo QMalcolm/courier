@@ -14,10 +14,10 @@ defmodule Courier.Ebooks do
 
   def get_ebook!(id) do
     Repo.get!(Ebook, id)
-    |> Repo.preload([
+    |> Repo.preload(
       articles: from(a in EbookArticle, order_by: a.position),
       sends: [:device]
-    ])
+    )
   end
 
   @doc """

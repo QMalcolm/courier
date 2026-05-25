@@ -47,8 +47,11 @@ defmodule Courier.Library do
           url = feed["url"]
 
           case FeedParser.fetch_guids(url) do
-            {:ok, guids} -> %{name: name, url: url, ok: true, detail: article_label(length(guids))}
-            {:error, reason} -> %{name: name, url: url, ok: false, detail: reason}
+            {:ok, guids} ->
+              %{name: name, url: url, ok: true, detail: article_label(length(guids))}
+
+            {:error, reason} ->
+              %{name: name, url: url, ok: false, detail: reason}
           end
         end)
 

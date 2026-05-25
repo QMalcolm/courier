@@ -49,12 +49,16 @@ defmodule Courier.SchedulesTest do
     end
 
     test "returns error for out-of-range hour" do
-      assert {:error, cs} = Schedules.create_schedule(%{hour: 25, minute: 0, days: "mon", timezone: "UTC"})
+      assert {:error, cs} =
+               Schedules.create_schedule(%{hour: 25, minute: 0, days: "mon", timezone: "UTC"})
+
       assert errors_on(cs).hour != []
     end
 
     test "returns error for empty days" do
-      assert {:error, cs} = Schedules.create_schedule(%{hour: 8, minute: 0, days: "", timezone: "UTC"})
+      assert {:error, cs} =
+               Schedules.create_schedule(%{hour: 8, minute: 0, days: "", timezone: "UTC"})
+
       assert errors_on(cs).days != []
     end
   end

@@ -164,7 +164,10 @@ defmodule CourierWeb.EbookLiveTest do
     test "renders ebook with non-empty sends list", %{conn: conn} do
       ebook = ebook_fixture()
       device = device_fixture()
-      {:ok, _send} = Courier.Ebooks.create_send(%{ebook_id: ebook.id, device_id: device.id, status: "success"})
+
+      {:ok, _send} =
+        Courier.Ebooks.create_send(%{ebook_id: ebook.id, device_id: device.id, status: "success"})
+
       {:ok, _view, html} = live(conn, ~p"/ebooks/#{ebook}")
       assert html =~ ebook.title
     end
@@ -180,7 +183,9 @@ defmodule CourierWeb.EbookLiveTest do
 
     test "duration/1" do
       assert Index.duration(%{started_at: nil}) == "—"
-      assert Index.duration(%{started_at: ~U[2024-01-01 10:00:00Z], finished_at: nil}) == "running…"
+
+      assert Index.duration(%{started_at: ~U[2024-01-01 10:00:00Z], finished_at: nil}) ==
+               "running…"
 
       assert Index.duration(%{
                started_at: ~U[2024-01-01 10:00:00Z],
@@ -221,7 +226,9 @@ defmodule CourierWeb.EbookLiveTest do
 
     test "duration/1" do
       assert Show.duration(%{started_at: nil}) == nil
-      assert Show.duration(%{started_at: ~U[2024-01-01 10:00:00Z], finished_at: nil}) == "running…"
+
+      assert Show.duration(%{started_at: ~U[2024-01-01 10:00:00Z], finished_at: nil}) ==
+               "running…"
 
       assert Show.duration(%{
                started_at: ~U[2024-01-01 10:00:00Z],

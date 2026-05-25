@@ -51,8 +51,7 @@
     <div :if={@ebook.log_output} class="rounded-lg border border-zinc-200 overflow-hidden">
       <details open={@ebook.status == "failure"}>
         <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-zinc-700 bg-white hover:bg-zinc-50 select-none list-none flex justify-between items-center">
-          Log output
-          <span class="text-zinc-400 text-xs font-normal">click to toggle</span>
+          Log output <span class="text-zinc-400 text-xs font-normal">click to toggle</span>
         </summary>
         <pre class="px-4 pb-4 pt-2 text-xs text-zinc-600 bg-zinc-50 overflow-x-auto whitespace-pre-wrap">{@ebook.log_output}</pre>
       </details>
@@ -77,8 +76,10 @@
 
       <div :if={@ebook.status == "success"}>
         <p :if={@devices == []} class="mt-3 text-sm text-zinc-500">
-          No devices configured.
-          <.link navigate={~p"/devices/new"} class="underline hover:text-zinc-700">Add one</.link>.
+          No devices configured. <.link
+            navigate={~p"/devices/new"}
+            class="underline hover:text-zinc-700"
+          >Add one</.link>.
         </p>
 
         <div
