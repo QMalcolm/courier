@@ -99,6 +99,18 @@ defmodule CourierWeb.EbookLiveTest do
 
       assert is_binary(html)
     end
+
+    test "preserves title and urls_text after validation error" do
+      {:ok, view, _html} = build_conn() |> live(~p"/ebooks/new")
+
+      html =
+        view
+        |> element("form[phx-submit=create]")
+        |> render_submit(%{title: "My Book", urls_text: "not-a-url"})
+
+      assert html =~ "My Book"
+      assert html =~ "not-a-url"
+    end
   end
 
   describe "show" do

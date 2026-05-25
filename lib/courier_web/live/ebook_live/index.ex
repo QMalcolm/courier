@@ -51,6 +51,8 @@ defmodule CourierWeb.EbookLive.Index do
 
     {reach_errors, pdf_urls} = reachability_check(urls)
 
+    socket = assign(socket, title: title, urls_text: urls_text)
+
     cond do
       errors != [] ->
         {:noreply, assign(socket, errors: errors, pdf_urls: [])}
