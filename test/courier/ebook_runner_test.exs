@@ -25,6 +25,38 @@ defmodule Courier.EbookRunnerTest do
       assert updated.finished_at != nil
       assert updated.log_output != nil
     end
+
+    test "fetches and persists article title from HTML page" do
+      bypass = Bypass.open()
+
+      Bypass.expect(bypass, fn conn ->
+        case conn.method do
+          "HEAD" ->
+            conn
+            |> Plug.Conn.put_resp_header("content-type", "text/html")
+            |> Plug.Conn.send_resp(200, "")
+
+          "GET" ->
+            conn
+            |> Plug.Conn.put_resp_header("content-type", "text/html; charset=utf-8")
+            |> Plug.Conn.send_resp(200, "<html><head><title>My Article Title</title></head></html>")
+        end
+      end)
+
+      # 0.0.0.0 is not in the SSRF blocklist; Bypass listens on all interfaces
+      # so connecting to 0.0.0.0:PORT reaches the Bypass server
+      {:ok, ebook} =
+        Ebooks.create_ebook_with_articles("Test Book", [
+          "http://0.0.0.0:#{bypass.port}/article"
+        ])
+
+      assert {:ok, _pid} = EbookRunner.create(ebook)
+      assert_receive {:ebook_updated, %{status: "running"}}, 3_000
+      assert_receive {:ebook_updated, %{status: _}}, 15_000
+
+      updated = Ebooks.get_ebook!(ebook.id)
+      assert hd(updated.articles).title == "My Article Title"
+    end
   end
 
   describe "send_to_device/2" do
