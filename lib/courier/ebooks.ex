@@ -49,6 +49,12 @@ defmodule Courier.Ebooks do
     |> Repo.update()
   end
 
+  def update_article(%EbookArticle{} = article, attrs) do
+    article
+    |> EbookArticle.changeset(attrs)
+    |> Repo.update()
+  end
+
   def delete_ebook(%Ebook{} = ebook) do
     Repo.delete(ebook)
   end

@@ -158,6 +158,7 @@ defmodule Courier.EbookRunner do
             {:error, log} -> {article, log}
           end
         else
+          article = if is_nil(article.title), do: fetch_title(article), else: article
           {article, ""}
         end
       end)
@@ -165,6 +166,48 @@ defmodule Courier.EbookRunner do
 
     combined_log = logs |> Enum.reject(&(&1 == "")) |> Enum.join()
     {prepared, combined_log}
+  end
+
+  defp fetch_title(article) do
+    req = Finch.build(:get, article.url, [{"user-agent", "Courier/1.0"}])
+
+    case Finch.request(req, Courier.Finch, receive_timeout: 10_000) do
+      {:ok, %{status: status, body: body}} when status in 200..299 ->
+        case extract_title(body) do
+          nil -> article
+          title ->
+            {:ok, updated} = Ebooks.update_article(article, %{title: title})
+            updated
+        end
+
+      _ ->
+        article
+    end
+  rescue
+    _ -> article
+  end
+
+  defp extract_title(html) do
+    case Regex.run(~r/<title[^>]*>(.*?)<\/title>/si, html, capture: :all_but_first) do
+      [raw] ->
+        decoded = raw |> String.trim() |> decode_html_entities()
+        if decoded == "", do: nil, else: decoded
+
+      _ ->
+        nil
+    end
+  end
+
+  defp decode_html_entities(text) do
+    text
+    |> String.replace("&amp;", "&")
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&apos;", "'")
+    |> String.replace("&nbsp;", " ")
+    |> then(&Regex.replace(~r/&#(\d+);/, &1, fn _, n -> <<String.to_integer(n)::utf8>> end))
+    |> then(&Regex.replace(~r/&#x([0-9a-fA-F]+);/, &1, fn _, h -> <<String.to_integer(h, 16)::utf8>> end))
   end
 
   defp pdf_url?(url) do
