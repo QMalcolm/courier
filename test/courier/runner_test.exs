@@ -61,7 +61,10 @@ defmodule Courier.RunnerTest do
       source = "feeds:\n  - name: Test\n    url: http://localhost:#{bypass.port}/feed\n"
       recipe = recipe_fixture(%{source: source})
       device = device_fixture()
-      {:ok, sub} = Subscriptions.create_subscription(%{recipe_id: recipe.id, device_id: device.id})
+
+      {:ok, sub} =
+        Subscriptions.create_subscription(%{recipe_id: recipe.id, device_id: device.id})
+
       sub = Repo.preload(sub, [:recipe, :device])
 
       DeliveredArticles.record_articles(recipe.id, ["old-article-1", "old-article-2"])

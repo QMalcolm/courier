@@ -39,7 +39,10 @@ defmodule Courier.EbookRunnerTest do
           "GET" ->
             conn
             |> Plug.Conn.put_resp_header("content-type", "text/html; charset=utf-8")
-            |> Plug.Conn.send_resp(200, "<html><head><title>My Article Title</title></head></html>")
+            |> Plug.Conn.send_resp(
+              200,
+              "<html><head><title>My Article Title</title></head></html>"
+            )
         end
       end)
 

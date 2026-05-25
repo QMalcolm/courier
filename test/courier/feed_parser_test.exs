@@ -185,6 +185,5 @@ defmodule Courier.FeedParserTest do
 
       assert {:ok, []} = FeedParser.fetch_guids("http://localhost:#{bypass.port}/no-guid")
     end
-
   end
 end

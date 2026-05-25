@@ -25,7 +25,10 @@ defmodule CourierWeb.FeedProxyControllerTest do
   end
 
   defp proxy_get(conn, recipe, url, run_id \\ "r") do
-    get(conn, "/proxy/feed?run_id=#{run_id}&recipe_id=#{recipe.id}&url=#{URI.encode_www_form(url)}")
+    get(
+      conn,
+      "/proxy/feed?run_id=#{run_id}&recipe_id=#{recipe.id}&url=#{URI.encode_www_form(url)}"
+    )
   end
 
   defp bypass_url(bypass, path), do: "http://localhost:#{bypass.port}#{path}"
@@ -108,7 +111,11 @@ defmodule CourierWeb.FeedProxyControllerTest do
     assert response(conn, 200) =~ "guid-new"
   end
 
-  test "passes through non-RSS/Atom content unchanged", %{conn: conn, bypass: bypass, recipe: recipe} do
+  test "passes through non-RSS/Atom content unchanged", %{
+    conn: conn,
+    bypass: bypass,
+    recipe: recipe
+  } do
     body = "<not-rss>some content</not-rss>"
 
     Bypass.expect_once(bypass, "GET", "/other", fn c ->

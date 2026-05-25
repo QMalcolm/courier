@@ -51,7 +51,10 @@ defmodule Courier.LibraryTest do
 
     test "returns error for duplicate slug" do
       recipe_fixture(%{slug: "dup"})
-      assert {:error, cs} = Library.create_recipe(%{name: "Y", slug: "dup", source: @valid_source})
+
+      assert {:error, cs} =
+               Library.create_recipe(%{name: "Y", slug: "dup", source: @valid_source})
+
       assert "has already been taken" in errors_on(cs).slug
     end
 
@@ -74,7 +77,13 @@ defmodule Courier.LibraryTest do
 
     test "returns error for oldest_article <= 0" do
       assert {:error, cs} =
-               Library.create_recipe(%{name: "X", slug: "x", source: @valid_source, oldest_article: 0})
+               Library.create_recipe(%{
+                 name: "X",
+                 slug: "x",
+                 source: @valid_source,
+                 oldest_article: 0
+               })
+
       assert errors_on(cs).oldest_article != []
     end
   end
@@ -125,6 +134,7 @@ defmodule Courier.LibraryTest do
       auto_cleanup: false
       use_embedded_content: true
       """
+
       r = recipe_fixture(%{source: source, slug: "opts"})
       python = Recipe.to_python(r, "1", "http://localhost:4000")
       assert python =~ "language              = 'fr'"
@@ -155,6 +165,7 @@ defmodule Courier.LibraryTest do
 
     test "returns ok result with article count for reachable feed" do
       bypass = Bypass.open()
+
       multi_item_feed = """
       <?xml version="1.0"?>
       <rss version="2.0"><channel>
@@ -163,6 +174,7 @@ defmodule Courier.LibraryTest do
         <item><guid>g3</guid><title>C</title></item>
       </channel></rss>
       """
+
       single_item_feed = """
       <?xml version="1.0"?>
       <rss version="2.0"><channel>

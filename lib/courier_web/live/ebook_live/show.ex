@@ -27,7 +27,9 @@ defmodule CourierWeb.EbookLive.Show do
   @impl true
   def handle_info({:ebook_updated, %{id: id}}, socket) when id == socket.assigns.ebook.id do
     ebook = Ebooks.get_ebook!(id)
-    {:noreply, socket |> assign(:ebook, ebook) |> assign(:sends_by_device, sends_by_device(ebook))}
+
+    {:noreply,
+     socket |> assign(:ebook, ebook) |> assign(:sends_by_device, sends_by_device(ebook))}
   end
 
   def handle_info({:ebook_updated, _}, socket), do: {:noreply, socket}

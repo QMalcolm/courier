@@ -65,7 +65,9 @@ defmodule CourierWeb.DeviceLive.Index do
     subscribed_ids =
       case Subscriptions.get_subscription_by_device_and_recipe(device.id, recipe_id) do
         nil ->
-          {:ok, _} = Subscriptions.create_subscription(%{device_id: device.id, recipe_id: recipe_id})
+          {:ok, _} =
+            Subscriptions.create_subscription(%{device_id: device.id, recipe_id: recipe_id})
+
           MapSet.put(socket.assigns.subscribed_ids, recipe_id)
 
         subscription ->

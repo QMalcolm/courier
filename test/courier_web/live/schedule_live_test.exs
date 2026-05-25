@@ -27,40 +27,49 @@ defmodule CourierWeb.ScheduleLiveTest do
   end
 
   describe "new" do
-    test "renders new schedule form", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/schedule/new")
-      assert html =~ "New Schedule"
+    setup %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/schedule/new")
+      {:ok, view: view}
     end
 
-    test "creates a schedule with valid params", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/schedule/new")
+    test "renders new schedule form", %{view: view} do
+      assert render(view) =~ "New Schedule"
+    end
 
+    test "creates a schedule with valid params", %{view: view} do
       html =
         view
         |> element("form#schedule-form")
-        |> render_submit(%{"schedule" => %{"hour" => "8", "minute" => "0", "days" => ["mon", "fri"], "timezone" => "UTC"}})
+        |> render_submit(%{
+          "schedule" => %{
+            "hour" => "8",
+            "minute" => "0",
+            "days" => ["mon", "fri"],
+            "timezone" => "UTC"
+          }
+        })
 
       assert html =~ "Schedule created"
     end
 
-    test "shows validation error for invalid hour", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/schedule/new")
-
+    test "shows validation error for invalid hour", %{view: view} do
       html =
         view
         |> element("form#schedule-form")
-        |> render_submit(%{"schedule" => %{"hour" => "99", "minute" => "0", "days" => ["mon"], "timezone" => "UTC"}})
+        |> render_submit(%{
+          "schedule" => %{"hour" => "99", "minute" => "0", "days" => ["mon"], "timezone" => "UTC"}
+        })
 
       assert html =~ "must be less than"
     end
 
-    test "validates on change", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/schedule/new")
-
+    test "validates on change", %{view: view} do
       html =
         view
         |> element("form#schedule-form")
-        |> render_change(%{"schedule" => %{"hour" => "8", "minute" => "0", "days" => ["mon"], "timezone" => "UTC"}})
+        |> render_change(%{
+          "schedule" => %{"hour" => "8", "minute" => "0", "days" => ["mon"], "timezone" => "UTC"}
+        })
 
       assert is_binary(html)
     end
@@ -80,7 +89,14 @@ defmodule CourierWeb.ScheduleLiveTest do
       html =
         view
         |> element("form#schedule-form")
-        |> render_submit(%{"schedule" => %{"hour" => to_string(schedule.hour), "minute" => to_string(schedule.minute), "days" => String.split(schedule.days, ","), "timezone" => "America/New_York"}})
+        |> render_submit(%{
+          "schedule" => %{
+            "hour" => to_string(schedule.hour),
+            "minute" => to_string(schedule.minute),
+            "days" => String.split(schedule.days, ","),
+            "timezone" => "America/New_York"
+          }
+        })
 
       assert html =~ "Schedule updated"
     end

@@ -34,7 +34,8 @@ defmodule Courier.FeedParser do
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
-      {:ok, %{status: status, headers: headers}} when status in [301, 302, 307, 308] and redirects_left > 0 ->
+      {:ok, %{status: status, headers: headers}}
+      when status in [301, 302, 307, 308] and redirects_left > 0 ->
         case List.keyfind(headers, "location", 0) do
           {"location", location} -> fetch_body(resolve_url(url, location), redirects_left - 1)
           nil -> {:error, "redirect with no Location header"}

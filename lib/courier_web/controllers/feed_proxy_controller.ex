@@ -34,7 +34,8 @@ defmodule CourierWeb.FeedProxyController do
 
         {:ok, body, content_type}
 
-      {:ok, %{status: status, headers: headers}} when status in [301, 302, 307, 308] and redirects_left > 0 ->
+      {:ok, %{status: status, headers: headers}}
+      when status in [301, 302, 307, 308] and redirects_left > 0 ->
         case List.keyfind(headers, "location", 0) do
           {"location", location} -> fetch_feed(resolve_url(url, location), redirects_left - 1)
           nil -> {:error, "redirect with no Location header"}
@@ -54,7 +55,13 @@ defmodule CourierWeb.FeedProxyController do
         filter_items(body, ~r/(<item[\s>].*?<\/item>)/s, "item", known_guids, &extract_rss_guid/1)
 
       String.contains?(body, "http://www.w3.org/2005/Atom") ->
-        filter_items(body, ~r/(<entry[\s>].*?<\/entry>)/s, "entry", known_guids, &extract_atom_id/1)
+        filter_items(
+          body,
+          ~r/(<entry[\s>].*?<\/entry>)/s,
+          "entry",
+          known_guids,
+          &extract_atom_id/1
+        )
 
       true ->
         {body, []}

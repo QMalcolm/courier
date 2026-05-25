@@ -72,28 +72,28 @@ defmodule CourierWeb.RecipeLiveTest do
   end
 
   describe "edit" do
-    test "renders edit form", %{conn: conn} do
-      recipe = recipe_fixture()
-      {:ok, _view, html} = live(conn, ~p"/recipes/#{recipe}/edit")
-      assert html =~ recipe.name
-    end
-
-    test "updates the recipe", %{conn: conn} do
+    setup %{conn: conn} do
       recipe = recipe_fixture()
       {:ok, view, _html} = live(conn, ~p"/recipes/#{recipe}/edit")
+      {:ok, recipe: recipe, view: view}
+    end
 
+    test "renders edit form", %{recipe: recipe, view: view} do
+      assert render(view) =~ recipe.name
+    end
+
+    test "updates the recipe", %{recipe: recipe, view: view} do
       html =
         view
-        |> form("#recipe-form", recipe: %{name: "Updated", slug: recipe.slug, source: @valid_source})
+        |> form("#recipe-form",
+          recipe: %{name: "Updated", slug: recipe.slug, source: @valid_source}
+        )
         |> render_submit()
 
       assert html =~ "Recipe updated"
     end
 
-    test "shows validation errors for blank name on edit", %{conn: conn} do
-      recipe = recipe_fixture()
-      {:ok, view, _html} = live(conn, ~p"/recipes/#{recipe}/edit")
-
+    test "shows validation errors for blank name on edit", %{recipe: recipe, view: view} do
       html =
         view
         |> form("#recipe-form", recipe: %{name: "", slug: recipe.slug, source: @valid_source})

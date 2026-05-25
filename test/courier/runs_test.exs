@@ -46,6 +46,7 @@ defmodule Courier.RunsTest do
     test "creates with valid attrs" do
       recipe = recipe_fixture()
       device = device_fixture()
+
       assert {:ok, %Run{status: "pending"}} =
                Runs.create_run(%{recipe_id: recipe.id, device_id: device.id, status: "pending"})
     end
@@ -53,8 +54,10 @@ defmodule Courier.RunsTest do
     test "returns error for invalid status" do
       recipe = recipe_fixture()
       device = device_fixture()
+
       assert {:error, cs} =
                Runs.create_run(%{recipe_id: recipe.id, device_id: device.id, status: "bad"})
+
       assert errors_on(cs).status != []
     end
   end
@@ -87,7 +90,9 @@ defmodule Courier.RunsTest do
     test "marks running runs as failure" do
       recipe = recipe_fixture()
       device = device_fixture()
-      {:ok, run} = Runs.create_run(%{recipe_id: recipe.id, device_id: device.id, status: "running"})
+
+      {:ok, run} =
+        Runs.create_run(%{recipe_id: recipe.id, device_id: device.id, status: "running"})
 
       Runs.mark_stale_runs_as_failed()
 

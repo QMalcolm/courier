@@ -151,6 +151,7 @@ defmodule Courier.Runner do
         Enum.any?(entries, fn
           {:zip_file, name, _, _, _, _} ->
             to_string(name) =~ ~r/article_\d+/
+
           _ ->
             false
         end)
@@ -166,7 +167,9 @@ defmodule Courier.Runner do
       [{^run_id, guids}] ->
         {count, _} = DeliveredArticles.record_articles(recipe_id, guids)
         count
-      [] -> 0
+
+      [] ->
+        0
     end
   end
 
@@ -185,7 +188,11 @@ defmodule Courier.Runner do
   end
 
   defp run_convert(recipe_file, epub_file, _recipe) do
-    cmd(calibre_bin("ebook-convert"), [recipe_file, epub_file, "--flow-size", "0"], "ebook-convert")
+    cmd(
+      calibre_bin("ebook-convert"),
+      [recipe_file, epub_file, "--flow-size", "0"],
+      "ebook-convert"
+    )
   end
 
   defp maybe_archive(epub_file) do
@@ -197,7 +204,11 @@ defmodule Courier.Runner do
         # calibredb refuses concurrent access to the library, so serialize all
         # archive calls across tasks with a global lock.
         :global.trans({:calibredb_lock, :archive}, fn ->
-          case cmd(calibre_bin("calibredb"), ["add", epub_file, "--library-path", library_path], "calibredb add") do
+          case cmd(
+                 calibre_bin("calibredb"),
+                 ["add", epub_file, "--library-path", library_path],
+                 "calibredb add"
+               ) do
             {:ok, log} -> log
             {:error, log} -> log
           end
@@ -218,13 +229,20 @@ defmodule Courier.Runner do
     subject = "#{recipe.name} — #{Date.utc_today()}"
 
     args = [
-      "--username", username,
-      "--password", password,
-      "--relay", relay,
-      "--port", port,
-      "--encryption", encryption,
-      "--subject", subject,
-      "--attachment", epub_file,
+      "--username",
+      username,
+      "--password",
+      password,
+      "--relay",
+      relay,
+      "--port",
+      port,
+      "--encryption",
+      encryption,
+      "--subject",
+      subject,
+      "--attachment",
+      epub_file,
       from,
       device.email,
       "Delivered by Courier"

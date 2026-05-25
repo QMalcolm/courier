@@ -91,7 +91,10 @@ defmodule Courier.EbooksTest do
     test "updates the send record" do
       ebook = ebook_fixture()
       device = device_fixture()
-      {:ok, send} = Ebooks.create_send(%{ebook_id: ebook.id, device_id: device.id, status: "running"})
+
+      {:ok, send} =
+        Ebooks.create_send(%{ebook_id: ebook.id, device_id: device.id, status: "running"})
+
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       assert {:ok, updated} = Ebooks.update_send(send, %{status: "success", sent_at: now})
       assert updated.status == "success"
@@ -100,8 +103,10 @@ defmodule Courier.EbooksTest do
     test "rejects invalid send status" do
       ebook = ebook_fixture()
       device = device_fixture()
+
       assert {:error, cs} =
                Ebooks.create_send(%{ebook_id: ebook.id, device_id: device.id, status: "bad"})
+
       assert errors_on(cs).status != []
     end
   end
@@ -110,6 +115,7 @@ defmodule Courier.EbooksTest do
     test "marks running ebooks as failure" do
       {:ok, ebook} =
         Ebooks.create_ebook_with_articles("Stale", ["http://0.0.0.0/a"])
+
       {:ok, _} = Ebooks.update_ebook(ebook, %{status: "running"})
 
       Ebooks.mark_stale_ebooks_as_failed()
@@ -154,31 +160,44 @@ defmodule Courier.EbooksTest do
     end
 
     test "rejects private IP addresses (SSRF prevention)" do
-      for host <- ["localhost", "127.0.0.1", "192.168.1.1", "10.0.0.1", "172.16.0.1", "172.31.0.1"] do
-        cs = EbookArticle.changeset(%EbookArticle{}, %{
-          url: "http://#{host}/page",
-          position: 0,
-          ebook_id: 1
-        })
+      for host <- [
+            "localhost",
+            "127.0.0.1",
+            "192.168.1.1",
+            "10.0.0.1",
+            "172.16.0.1",
+            "172.31.0.1"
+          ] do
+        cs =
+          EbookArticle.changeset(%EbookArticle{}, %{
+            url: "http://#{host}/page",
+            position: 0,
+            ebook_id: 1
+          })
+
         assert "must be a public URL" in errors_on(cs).url, "expected #{host} to be rejected"
       end
     end
 
     test "accepts public URLs" do
-      cs = EbookArticle.changeset(%EbookArticle{}, %{
-        url: "https://example.com/article",
-        position: 0,
-        ebook_id: 1
-      })
+      cs =
+        EbookArticle.changeset(%EbookArticle{}, %{
+          url: "https://example.com/article",
+          position: 0,
+          ebook_id: 1
+        })
+
       assert cs.valid?
     end
 
     test "rejects non-http schemes" do
-      cs = EbookArticle.changeset(%EbookArticle{}, %{
-        url: "ftp://example.com/file",
-        position: 0,
-        ebook_id: 1
-      })
+      cs =
+        EbookArticle.changeset(%EbookArticle{}, %{
+          url: "ftp://example.com/file",
+          position: 0,
+          ebook_id: 1
+        })
+
       assert errors_on(cs).url != []
     end
   end

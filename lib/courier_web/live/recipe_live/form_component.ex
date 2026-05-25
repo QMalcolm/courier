@@ -38,7 +38,10 @@ defmodule CourierWeb.RecipeLive.FormComponent do
           ><%= Phoenix.HTML.Form.normalize_value("textarea", @form[:source].value) %></textarea>
           <.error :for={msg <- Enum.map(@form[:source].errors, &translate_error(&1))}>{msg}</.error>
         </div>
-        <div :if={is_list(@feed_check_results)} class="rounded-lg border border-zinc-200 divide-y divide-zinc-100">
+        <div
+          :if={is_list(@feed_check_results)}
+          class="rounded-lg border border-zinc-200 divide-y divide-zinc-100"
+        >
           <div :if={@feed_check_results == []} class="px-3 py-2 text-sm text-zinc-500">
             No valid feeds found in source YAML.
           </div>

@@ -72,7 +72,8 @@ defmodule Courier.Library.Recipe do
       "    no_stylesheets        = #{no_stylesheets}\n",
       "    use_embedded_content  = #{use_embedded_content}\n\n",
       "    feeds = [\n",
-      feeds_lines, "\n",
+      feeds_lines,
+      "\n",
       "    ]\n"
     ]
     |> IO.iodata_to_binary()

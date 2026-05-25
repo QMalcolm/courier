@@ -59,8 +59,7 @@ config :logger, :console,
   metadata: [:request_id]
 
 # Quantum scheduler — jobs are managed dynamically via the Schedules UI
-config :courier, Courier.Scheduler,
-  jobs: []
+config :courier, Courier.Scheduler, jobs: []
 
 # Configure tzdata as the time zone database so Quantum can resolve IANA timezone names
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase

@@ -90,14 +90,22 @@ defmodule Courier.SubscriptionsTest do
     test "creates a subscription with valid attrs" do
       recipe = recipe_fixture()
       device = device_fixture()
-      assert {:ok, sub} = Subscriptions.create_subscription(%{recipe_id: recipe.id, device_id: device.id})
+
+      assert {:ok, sub} =
+               Subscriptions.create_subscription(%{recipe_id: recipe.id, device_id: device.id})
+
       assert sub.enabled == true
     end
 
     test "enforces uniqueness of recipe+device pair" do
       sub = subscription_fixture()
+
       assert {:error, cs} =
-               Subscriptions.create_subscription(%{recipe_id: sub.recipe_id, device_id: sub.device_id})
+               Subscriptions.create_subscription(%{
+                 recipe_id: sub.recipe_id,
+                 device_id: sub.device_id
+               })
+
       assert errors_on(cs).recipe_id != []
     end
 
@@ -119,7 +127,9 @@ defmodule Courier.SubscriptionsTest do
     test "deletes the subscription" do
       sub = subscription_fixture()
       assert {:ok, _} = Subscriptions.delete_subscription(sub)
-      assert nil == Subscriptions.get_subscription_by_device_and_recipe(sub.device_id, sub.recipe_id)
+
+      assert nil ==
+               Subscriptions.get_subscription_by_device_and_recipe(sub.device_id, sub.recipe_id)
     end
   end
 

@@ -40,6 +40,7 @@ defmodule Courier.EbookRunner do
         log_output: nil,
         archived: false
       })
+
     broadcast({:ebook_updated, ebook})
 
     {status, log, archived} =
@@ -56,7 +57,9 @@ defmodule Courier.EbookRunner do
                 {archive_log, did_archive} = maybe_archive(epub_file)
                 {"success", pdf_log <> convert_log <> archive_log, did_archive}
               else
-                msg = "=== result ===\nNo article content could be extracted. URLs may be paywalled or require JavaScript rendering.\n"
+                msg =
+                  "=== result ===\nNo article content could be extracted. URLs may be paywalled or require JavaScript rendering.\n"
+
                 {"failure", pdf_log <> convert_log <> msg, false}
               end
 
@@ -113,7 +116,10 @@ defmodule Courier.EbookRunner do
 
     {:ok, _} = Ebooks.update_send(send, %{status: send_status, sent_at: sent_at})
 
-    Logger.info("[EbookRunner] Send finished: ebook=#{ebook.id} device=#{device.email} status=#{send_status}")
+    Logger.info(
+      "[EbookRunner] Send finished: ebook=#{ebook.id} device=#{device.email} status=#{send_status}"
+    )
+
     broadcast({:ebook_updated, Ebooks.get_ebook!(ebook.id)})
   end
 
@@ -174,7 +180,9 @@ defmodule Courier.EbookRunner do
     case Finch.request(req, Courier.Finch, receive_timeout: 10_000) do
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         case extract_title(body) do
-          nil -> article
+          nil ->
+            article
+
           title ->
             {:ok, updated} = Ebooks.update_article(article, %{title: title})
             updated
@@ -207,7 +215,9 @@ defmodule Courier.EbookRunner do
     |> String.replace("&apos;", "'")
     |> String.replace("&nbsp;", " ")
     |> then(&Regex.replace(~r/&#(\d+);/, &1, fn _, n -> <<String.to_integer(n)::utf8>> end))
-    |> then(&Regex.replace(~r/&#x([0-9a-fA-F]+);/, &1, fn _, h -> <<String.to_integer(h, 16)::utf8>> end))
+    |> then(
+      &Regex.replace(~r/&#x([0-9a-fA-F]+);/, &1, fn _, h -> <<String.to_integer(h, 16)::utf8>> end)
+    )
   end
 
   defp pdf_url?(url) do
@@ -300,7 +310,11 @@ defmodule Courier.EbookRunner do
   end
 
   defp run_convert(recipe_file, epub_file) do
-    cmd(calibre_bin("ebook-convert"), [recipe_file, epub_file, "--flow-size", "0"], "ebook-convert")
+    cmd(
+      calibre_bin("ebook-convert"),
+      [recipe_file, epub_file, "--flow-size", "0"],
+      "ebook-convert"
+    )
   end
 
   defp maybe_archive(epub_file) do
@@ -335,13 +349,20 @@ defmodule Courier.EbookRunner do
     subject = "#{ebook.title} — #{Date.utc_today()}"
 
     args = [
-      "--username", username,
-      "--password", password,
-      "--relay", relay,
-      "--port", port,
-      "--encryption", encryption,
-      "--subject", subject,
-      "--attachment", epub_file,
+      "--username",
+      username,
+      "--password",
+      password,
+      "--relay",
+      relay,
+      "--port",
+      port,
+      "--encryption",
+      encryption,
+      "--subject",
+      subject,
+      "--attachment",
+      epub_file,
       from,
       device.email,
       "Delivered by Courier"
