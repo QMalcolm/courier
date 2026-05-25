@@ -15,6 +15,8 @@ defmodule Courier.MixProject do
         ignore_modules: [
           Courier.Release,
           Courier.Repo,
+          Courier.Runner,
+          Courier.EbookRunner,
           CourierWeb.Layouts,
           CourierWeb.ErrorHTML
         ]
