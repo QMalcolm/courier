@@ -88,11 +88,8 @@ defmodule CourierWeb.FeedProxyController do
     {filtered_body, served_guids}
   end
 
-  defp resolve_url(_base, location) when binary_part(location, 0, 4) == "http", do: location
-
   defp resolve_url(base, location) do
-    uri = URI.parse(base)
-    "#{uri.scheme}://#{uri.host}#{location}"
+    URI.merge(URI.parse(base), URI.parse(location)) |> URI.to_string()
   end
 
   defp extract_rss_guid(item_block), do: FeedParser.extract_rss_guid(item_block)

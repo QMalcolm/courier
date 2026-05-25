@@ -185,20 +185,27 @@ defmodule CourierWeb.FeedProxyControllerTest do
     assert body =~ "has-guid"
   end
 
-  test "follows relative redirect (resolve_url path, may drop port)", %{
+  test "follows relative redirect preserving host and port", %{
     conn: conn,
     bypass: bypass,
     recipe: recipe
   } do
-    Bypass.expect_once(bypass, "GET", "/relative-redir", fn c ->
-      c
-      |> Plug.Conn.put_resp_header("location", "/destination")
-      |> Plug.Conn.send_resp(301, "")
+    Bypass.expect(bypass, fn c ->
+      case c.request_path do
+        "/relative-redir" ->
+          c
+          |> Plug.Conn.put_resp_header("location", "/destination")
+          |> Plug.Conn.send_resp(301, "")
+
+        "/destination" ->
+          c
+          |> Plug.Conn.put_resp_content_type("application/rss+xml")
+          |> Plug.Conn.send_resp(200, @rss_feed)
+      end
     end)
 
-    # resolve_url/2 is exercised; follow-up fails because port is dropped
     conn = proxy_get(conn, recipe, bypass_url(bypass, "/relative-redir"))
-    assert response(conn, 502) =~ "Failed to fetch"
+    assert response(conn, 200) =~ "guid-new"
   end
 
   test "accumulates guids across multiple requests with the same run_id", %{
